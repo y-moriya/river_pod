@@ -2,6 +2,7 @@ module.exports = {
   someSidebar: {
     Fundamentals: [
       "fundamentals/getting_started",
+      "fundamentals/why_riverpod",
       {
         type: "category",
         label: "Concepts",
