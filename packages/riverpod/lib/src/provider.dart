@@ -1,27 +1,10 @@
-import '../builders.dart';
-import '../common.dart';
-import '../framework/framework.dart';
-import '../state_notifier_provider/state_notifier_provider.dart';
-import '../stream_provider/stream_provider.dart';
+import 'builders.dart';
+import 'framework.dart';
+import 'state_notifier_provider.dart';
+import 'stream_provider.dart';
 
-part 'auto_dispose_provider.dart';
-
-/// The state to a [Provider].
-abstract class ProviderDependency<T> extends ProviderDependencyBase {
-  /// The value exposed by [Provider].
-  ///
-  /// It is guaranteed to never change.
-  T get value;
-}
-
-// ignore: public_member_api_docs
-class ProviderDependencyImpl<T> implements ProviderDependency<T> {
-  // ignore: public_member_api_docs
-  ProviderDependencyImpl(this.value);
-
-  @override
-  final T value;
-}
+part 'provider/base.dart';
+part 'provider/auto_dispose.dart';
 
 /// {@template riverpod.provider}
 /// A provider that exposes a read-only value.
@@ -37,10 +20,10 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 ///   Providers can be accessed from anywhere, while ensuring testability and scalability.
 ///
 /// - Providers are safe to use.\
-///   As opposed to most existing solutions, using a provider, it is not possible to
-///   read a value in an uninitialized state.\
-///   If we can write the code to read a state, that state is available and ready.
-///   Even if loaded asynchronously.
+///   As opposed to most service-locator solutions, using a provider, it is not
+///   possible to read a value in an uninitialized state.\
+///   If we can write the code to read a state, the code will execute properly.
+///   Even if the state is loaded asynchronously.
 ///
 /// - Providers allow easily and efficiently listening to a piece of state.\
 ///   They can be accessed in a single line of code, and offers many way to optimize
@@ -59,9 +42,9 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// ```
 ///
 /// **NOTE**
-/// You do not have to declare providers as globals. It is simply usually the most
-/// logical choice.
-///
+/// Do not feel threatened by the fact that a provider is declared as a global.
+/// While providers are globals, the variable is fully immutable.
+/// This makes creating a provider no different from declaring a function or a class.
 ///
 /// This snippet consist of three components:
 ///
@@ -86,7 +69,7 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// On the other hand, [StreamProvider]'s callback will be expected to return a [Stream].
 ///
 /// **NOTE**:
-/// You can declare as many providers as you, want without limitations.\
+/// You can declare as many providers as you want, without limitations.\
 /// As opposed to when using `package:provider`, in `Riverpod` we can have two
 /// providers expose a state of the same "type":
 ///
@@ -95,12 +78,11 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// final countryProvider = Provider((ref) => 'England');
 /// ```
 ///
-/// The fact that both providers creates a `String` does not cause conflicts. We will be
-/// able to read both values independently from each other without issue.
-///
+/// The fact that both providers creates a `String` does not cause conflicts.
+/// We will be able to read both values independently from each other without issue.
 ///
 /// **WARNING**
-/// For providers to work, you have to add `ProviderScope` at the root of your
+/// For providers to work, you need to add `ProviderScope` at the root of your
 /// Flutter applications:
 ///
 /// ```dart
@@ -115,7 +97,7 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// in many situation a provider will want to read the state of another provider.
 ///
 /// To do that, we can use the `ref` object passed to the callback of our provider,
-/// and use its `read` method.
+/// and use its `watch` method.
 ///
 /// As an example, consider the following provider:
 ///
@@ -127,9 +109,9 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 ///
 /// ```dart
 /// final weatherProvider = FutureProvider((ref) async {
-///   // We use `ref.read` to read another provider, and we pass it the provider
+///   // We use `ref.watch` to watch another provider, and we pass it the provider
 ///   // that we want to consume. Here: cityProvider
-///   final city = ref.read(cityProvider);
+///   final city = ref.watch(cityProvider);
 ///
 ///   // We can then use the result to do something based on the value of `cityProvider`.
 ///   return fetchWeather(city: city);
@@ -137,6 +119,9 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// ```
 ///
 /// That's it. We've created a provider that depends on another provider.
+///
+/// One interesting aspect of this code is, if `city` ever changes,
+/// this will automatically call `fetchWeather` again and update the UI accordingly.
 ///
 /// ### Creating an object that depends on a lot of providers.
 ///
@@ -213,7 +198,7 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 /// The following example uses `ref.onDispose` to close a `StreamController`:
 ///
 /// ```dart
-/// final example = StreamProvider((ref) {
+/// final example = StreamProvider.autoDispose((ref) {
 ///   final streamController = StreamController<int>();
 ///
 ///   ref.onDispose(() {
@@ -224,54 +209,18 @@ class ProviderDependencyImpl<T> implements ProviderDependency<T> {
 ///   return streamController.stream;
 /// });
 /// ```
+///
+/// See also:
+///
+/// - [Provider.autoDispose], to automatically destroy the state of a provider
+///   when that provider is no-longer listened.
+/// - [Provider.family], to allow providers to create a value from external parameters.
 /// {@endtemplate}
-class Provider<T> extends AlwaysAliveProviderBase<ProviderDependency<T>, T> {
-  /// {@macro riverpod.provider}
-  Provider(this._create, {String name}) : super(name);
-
-  /// {@macro riverpod.family}
-  static const family = ProviderFamilyBuilder();
-
-  /// {@macro riverpod.autoDispose}
-  static const autoDispose = AutoDisposeProviderBuilder();
-
-  final Create<T, ProviderReference> _create;
-
+mixin _ProviderStateMixin<T> on ProviderStateBase<T, T> {
   @override
-  ProviderState<T> createState() => ProviderState();
-}
-
-/// The internal state of a [Provider].
-class ProviderState<T>
-    extends ProviderStateBase<ProviderDependency<T>, T, Provider<T>> {
-  @override
-  T state;
-
-  @override
-  void initState() {
-    // ignore: invalid_use_of_visible_for_testing_member
-    state = provider._create(ProviderReference(this));
-  }
-
-  @override
-  ProviderDependency<T> createProviderDependency() {
-    return ProviderDependencyImpl(state);
-  }
-}
-
-/// A family of [Provider].
-class ProviderFamily<Result, A> extends Family<Provider<Result>, A> {
-  /// Creates a value from an external parameter
-  ProviderFamily(Result Function(ProviderReference ref, A a) create)
-      : super((a) => Provider((ref) => create(ref, a)));
-
-  /// Overrides the behavior of a family for a part of the application.
-  Override overrideAs(
-    Result Function(ProviderReference ref, A value) override,
-  ) {
-    return FamilyOverride(
-      this,
-      (value) => Provider<Result>((ref) => override(ref, value as A)),
-    );
+  void valueChanged({T previous}) {
+    if (createdValue != exposedValue) {
+      exposedValue = createdValue;
+    }
   }
 }

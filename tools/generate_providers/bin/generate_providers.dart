@@ -56,12 +56,7 @@ const _autoDisposeDoc = '''
 ///   re-enter the screen.
 /// - Cancel HTTP requests if the user leaves a screen before the request completed.
 ///
-/// Marking a provider with `autoDispose` has two effects:
-///
-/// - this adds a new property on the `ref` parameter of your provider: `maintainState`
-/// - the `readOwner(ProviderStateOwner)` and `read(BuildContext)` methods
-///   of a provider are removed.
-///   It is no-longer possible to read a provider without listening to it.
+/// Marking a provider with `autoDispose` also adds an extra property on `ref`: `maintainState`.
 ///
 /// The `maintainState` property is a boolean (`false` by default) that allows
 /// the provider to tell Riverpod if the state of the provider should be preserved
@@ -215,7 +210,7 @@ const _familyDoc = r'''
 ///
 /// **NOTE**: It is totally possible to use a family with different parameters
 /// simultaneously. For example, we could use a `titleProvider` to read both
-/// the french and english translatons at the same time:
+/// the french and english translations at the same time:
 ///
 /// ```dart
 /// @override
@@ -235,23 +230,24 @@ const _familyDoc = r'''
 /// Ideally the parameter should either be a primitive (bool/int/double/String),
 /// a constant (providers), or an immutable object that override `==` and `hashCode`.
 ///
-/// Using a complex object that does not override `==`/`hashCode` could lead to
-/// memory leak.
 ///
-/// - **AVOID** passing heavy objects or objects that changes very often as parameters.
-///
-///   A parameter and its associated provider will never be removed from memory,
-///   even if no-longer used (although the state of the provider may get destroyed).
-///
-///   This is not a problem for simple variables like a user ID, but passing the
-///   entire application state as parameter could have unexpected consequences.
+/// - **PREFER** using `family` in combination with `autoDispose` if the
+///   parameter passed to providers is a complex object:
+/// 
+///   ```dart
+///   final example = Provider.autoDispose.family<Value, ComplexParameter>((ref, param) {
+///   });
+///   ```
+/// 
+///   This ensures that there is no memory leak if the parameter changed and is
+///   never used again.
 ///
 /// # Passing multiple parameters to a family
 ///
 /// Families have no built-in support for passing multiple values to a provider.
 ///
-/// On the other hand, that value could be _anything_ (as long as it matched with
-/// the restrictions mentionned previously).
+/// On the other hand, that value could be _anything_ (as long as it matches with
+/// the restrictions mentioned previously).
 ///
 /// This includes:
 /// - A tuple (using `package:tuple`)
@@ -376,10 +372,7 @@ Iterable<Object> generateAll(
     final second = permutation[1];
     final third = permutation[2];
 
-    if (first is DisposeType &&
-        second is StateType &&
-        third is ProviderType &&
-        (first == DisposeType.none || second != StateType.state)) {
+    if (first is DisposeType && second is StateType && third is ProviderType) {
       yield* generate(Tuple3(first, second, third), matrix);
     }
   }
@@ -478,7 +471,7 @@ ${familyDoc().replaceAll('///', '  ///')}
     ${configs.createType} Function(${configs.ref} ref, Value value) create, {
     String name,
   }) {
-    return ${configs.providerName}(create);
+    return ${configs.providerName}(create, name: name);
   }
 ${configs.links(matrix)}
 }
