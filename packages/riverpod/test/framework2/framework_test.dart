@@ -253,7 +253,7 @@ void main() {
       expect(sub.read(), const AsyncValue.data(42));
     });
 
-    test('notify listeners when value changes', () {
+    test('notify listeners when override value changes', () {
       final provider = Provider((ref) => 0);
       final container = ProviderContainer(overrides: [
         provider.overrideWithValue(42),
@@ -275,11 +275,10 @@ void main() {
       ]);
 
       verifyOnly(mayHaveChanged, mayHaveChanged(sub));
-      verifyZeroInteractions(didChange);
+      verifyOnly(didChange, didChange(sub));
 
       expect(sub.read(), 21);
 
-      verifyOnly(didChange, didChange(sub));
       verifyNoMoreInteractions(mayHaveChanged);
     });
 
@@ -347,93 +346,127 @@ void main() {
 
   group('Element.listen', () {
     group('didChange', () {
-      test('is called next sub.read', () {
-        final counter = Counter();
-        final provider = StateNotifierProvider((ref) => counter);
+      group('on known change', () {
+        test('is called synchronously on change', () {
+          final counter = Counter();
+          final provider = StateNotifierProvider((ref) => counter);
 
-        final sub = container.listen(
-          provider.state,
-          didChange: didChange,
-        );
+          final sub = container.listen(
+            provider.state,
+            didChange: didChange,
+          );
 
-        verifyZeroInteractions(didChange);
+          verifyZeroInteractions(didChange);
 
-        counter.increment();
+          counter.increment();
 
-        verifyZeroInteractions(didChange);
-        expect(sub.read(), 1);
-        verifyOnly(didChange, didChange(sub));
+          verifyOnly(didChange, didChange(sub));
+
+          counter.increment();
+
+          verifyOnly(didChange, didChange(sub));
+
+          expect(sub.read(), 2);
+
+          verifyNoMoreInteractions(didChange);
+        });
       });
 
-      test('is called at most once per read', () {
-        final counter = Counter();
-        final provider = StateNotifierProvider((ref) => counter);
+      group('on dependency change', () {
+        test('is called next sub.read', () {
+          final counter = Counter();
+          final dependency = StateNotifierProvider((ref) => counter);
+          final provider = Provider((ref) => ref.watch(dependency.state));
 
-        final sub = container.listen(
-          provider.state,
-          didChange: didChange,
-        );
+          final sub = container.listen(
+            provider,
+            didChange: didChange,
+          );
 
-        verifyZeroInteractions(didChange);
+          verifyZeroInteractions(didChange);
 
-        counter.increment();
-        counter.increment();
-        counter.increment();
+          counter.increment();
 
-        verifyZeroInteractions(didChange);
-        expect(sub.read(), 3);
-        verifyOnly(didChange, didChange(sub));
-      });
+          verifyZeroInteractions(didChange);
 
-      test('are all executed after one read call', () {
-        final counter = Counter();
-        final provider = StateNotifierProvider((ref) => counter);
-        final didChange2 = DidChangedMock<int>();
+          expect(sub.read(), 1);
 
-        final sub = container.listen(
-          provider.state,
-          didChange: didChange,
-        );
-        final sub2 = container.listen(
-          provider.state,
-          didChange: didChange2,
-        );
+          verifyOnly(didChange, didChange(sub));
+        });
 
-        counter.increment();
+        test('is called at most once per read', () {
+          final counter = Counter();
+          final dependency = StateNotifierProvider((ref) => counter);
+          final provider = Provider((ref) => ref.watch(dependency.state));
 
-        verifyZeroInteractions(didChange);
-        verifyZeroInteractions(didChange2);
+          final sub = container.listen(
+            provider,
+            didChange: didChange,
+          );
 
-        expect(sub.read(), 1);
+          verifyZeroInteractions(didChange);
 
-        verifyOnly(didChange, didChange(sub));
-        verifyOnly(didChange2, didChange2(sub2));
-      });
+          counter.increment();
+          counter.increment();
+          counter.increment();
 
-      test('is guarded', () {
-        final counter = Counter();
-        final provider = StateNotifierProvider((ref) => counter);
-        final didChange2 = DidChangedMock<int>();
-        when(didChange(any)).thenThrow(42);
-        when(didChange2(any)).thenThrow(21);
+          verifyZeroInteractions(didChange);
+          expect(sub.read(), 3);
+          verifyOnly(didChange, didChange(sub));
+        });
 
-        final sub = container.listen(
-          provider.state,
-          didChange: didChange,
-        );
-        final sub2 = container.listen(
-          provider.state,
-          didChange: didChange2,
-        );
+        test('are all executed after one read call', () {
+          final counter = Counter();
+          final dependency = StateNotifierProvider((ref) => counter);
+          final provider = Provider((ref) => ref.watch(dependency.state));
+          final didChange2 = DidChangedMock<int>();
 
-        counter.increment();
+          final sub = container.listen(
+            provider,
+            didChange: didChange,
+          );
+          final sub2 = container.listen(
+            provider,
+            didChange: didChange2,
+          );
 
-        final errors = errorsOf(sub.read);
+          counter.increment();
 
-        verifyOnly(didChange, didChange(sub));
-        verifyOnly(didChange2, didChange2(sub2));
+          verifyZeroInteractions(didChange);
+          verifyZeroInteractions(didChange2);
 
-        expect(errors, unorderedEquals(<Object>[42, 21]));
+          expect(sub.read(), 1);
+
+          verifyOnly(didChange, didChange(sub));
+          verifyOnly(didChange2, didChange2(sub2));
+        });
+
+        test('is guarded', () {
+          final counter = Counter();
+          final dependency = StateNotifierProvider((ref) => counter);
+          final provider = Provider((ref) => ref.watch(dependency.state));
+          final didChange2 = DidChangedMock<int>();
+          when(didChange(any)).thenThrow(42);
+          when(didChange2(any)).thenThrow(21);
+
+          final sub = container.listen(
+            provider,
+            didChange: didChange,
+          );
+          final sub2 = container.listen(
+            provider,
+            didChange: didChange2,
+          );
+
+          counter.increment();
+
+          final errors = errorsOf(sub.read);
+
+          verifyOnly(didChange, didChange(sub));
+          verifyOnly(didChange2, didChange2(sub2));
+
+          expect(errors, unorderedEquals(<Object>[42, 21]));
+        });
       });
     });
 

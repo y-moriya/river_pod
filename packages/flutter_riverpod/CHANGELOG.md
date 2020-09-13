@@ -16,6 +16,34 @@
   If you do not use this lint, prefer using the default import instead, to not
   pollute your auto-complete.
 
+- `ProviderListener`'s `onChange` is now called synchronously on provider change
+
+- `ProviderContainer.listen(didChange: )` is now called immediately after
+  a provider is known to have changed.
+
+- Reversed the order in which `ProviderObserver.mayHaveChanged` is notified
+  when a graph of providers is updated.
+  Consider:
+
+  ```dart
+  final first = StateProvider((ref) => 0):
+  final second = Provider((ref) => ref.watch(first).state);
+  ```
+
+  Before, changing the state of `first` called the observer with:
+
+  ```dart
+  observer.mayHaveChanged(second);
+  observer.mayHaveChanged(first);
+  ```
+
+  now, we have:
+
+  ```dart
+  observer.mayHaveChanged(first);
+  observer.mayHaveChanged(second);
+  ```
+
 # 0.9.0
 
 - **Breaking** Updating `ProviderListener` so that `onChange` receives the

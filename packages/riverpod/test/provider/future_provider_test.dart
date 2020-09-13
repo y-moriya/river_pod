@@ -357,10 +357,10 @@ void main() {
     verifyNoMoreInteractions(listener);
     completer.complete(42);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data('21 42'))).called(1);
+
     sub.flush();
 
-    verify(listener(const AsyncValue.data('21 42'))).called(1);
     verifyNoMoreInteractions(listener);
 
     container.dispose();
@@ -383,10 +383,10 @@ void main() {
 
     completer.complete(42);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data(42))).called(1);
+
     sub.flush();
 
-    verify(listener(const AsyncValue.data(42))).called(1);
     verifyNoMoreInteractions(listener);
     container.dispose();
   });

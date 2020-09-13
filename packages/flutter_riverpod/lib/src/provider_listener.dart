@@ -81,16 +81,17 @@ class _ProviderListenerState<T> extends State<ProviderListener<T>> {
       _subscription = _container.listen<T>(
         widget.provider,
         mayHaveChanged: _mayHaveChanged,
+        didChange: _didChange,
       );
     }
   }
 
+  void _didChange(ProviderSubscription<T> subscription) {
+    widget.onChange(context, subscription.read());
+  }
+
   void _mayHaveChanged(ProviderSubscription<T> subscription) {
-    Future.microtask(() {
-      if (subscription.flush()) {
-        widget.onChange(context, subscription.read());
-      }
-    });
+    Future.microtask(subscription.flush);
   }
 
   @override

@@ -150,16 +150,18 @@ void main() {
 
     controller.add(42);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data(42))).called(1);
+
     sub.flush();
-    verify(listener(const AsyncValue.data(42))).called(1);
+
     verifyNoMoreInteractions(listener);
 
     controller.add(21);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data(21))).called(1);
+
     sub.flush();
-    verify(listener(const AsyncValue.data(21))).called(1);
+
     verifyNoMoreInteractions(listener);
 
     await controller.close();
@@ -180,21 +182,23 @@ void main() {
       onChange: listener,
     );
 
-    verify(listener(const AsyncValue<int>.loading())).called(1);
+    verify(listener(const AsyncValue<int>.loading()));
     verifyNoMoreInteractions(listener);
 
     controller.addError(error, stack);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(AsyncValue.error(error, stack)));
+
     sub.flush();
-    verify(listener(AsyncValue.error(error, stack)));
+
     verifyNoMoreInteractions(listener);
 
     controller.add(21);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data(21)));
+
     sub.flush();
-    verify(listener(const AsyncValue.data(21))).called(1);
+
     verifyNoMoreInteractions(listener);
 
     await controller.close();
@@ -222,9 +226,10 @@ void main() {
 
     controller.add(42);
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(const AsyncValue.data(42))).called(1);
+
     sub.flush();
-    verify(listener(const AsyncValue.data(42))).called(1);
+
     verifyNoMoreInteractions(listener);
     verifyNoMoreInteractions(dispose);
 

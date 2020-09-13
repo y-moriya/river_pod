@@ -47,8 +47,7 @@ void main() {
       expect(find.text('hello'), findsOneWidget);
     });
 
-    testWidgets('calls onChange at the end of frame after a mayHaveChanged',
-        (tester) async {
+    testWidgets('calls onChange immediatly on state change', (tester) async {
       final container = ProviderContainer();
       final provider = StateProvider((ref) => 0);
       final onChange = ListenerMock<int>();
@@ -67,6 +66,41 @@ void main() {
       verifyZeroInteractions(onChange);
 
       container.read(provider).state++;
+
+      verifyOnly(onChange, onChange(1));
+
+      container.read(provider).state++;
+
+      verifyOnly(onChange, onChange(2));
+
+      await Future<void>.value();
+
+      verifyNoMoreInteractions(onChange);
+    });
+
+    testWidgets('calls onChange at the end of frame on dependency change',
+        (tester) async {
+      final container = ProviderContainer();
+      final dependency = StateProvider((ref) => 0);
+      final provider = Provider((ref) => ref.watch(dependency).state);
+      final onChange = ListenerMock<int>();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: ProviderListener<int>(
+            provider: provider,
+            onChange: (_, value) => onChange(value),
+            child: Container(),
+          ),
+        ),
+      );
+
+      verifyZeroInteractions(onChange);
+
+      container.read(dependency).state++;
+
+      verifyZeroInteractions(onChange);
 
       await Future<void>.value();
 
@@ -97,31 +131,6 @@ void main() {
 
       container.read(provider).state++;
       await Future<void>.value();
-    });
-
-    testWidgets('calls onChange at most once per frame', (tester) async {
-      final provider = StateProvider((ref) => 0);
-      final onChange = ListenerMock<int>();
-      final container = ProviderContainer();
-
-      await tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: ProviderListener<StateController<int>>(
-            provider: provider,
-            onChange: (_, value) => onChange(value.state),
-            child: Container(),
-          ),
-        ),
-      );
-      verifyZeroInteractions(onChange);
-
-      container.read(provider).state++;
-      container.read(provider).state++;
-      container.read(provider).state++;
-      await Future<void>.value();
-
-      verifyOnly(onChange, onChange(3));
     });
 
     group('supports null', () {

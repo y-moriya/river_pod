@@ -559,52 +559,6 @@ void main() {
   });
 
   group('notify listeners', () {
-    test('calls onChange at most once per flush', () {
-      final counter = Counter();
-      final provider = StateNotifierProvider<Counter>((_) => counter);
-      final container = ProviderContainer();
-      final mayHaveChanged = MockMarkMayHaveChanged();
-      final listener = ListenerMock();
-
-      final sub = provider.state.addLazyListener(
-        container,
-        mayHaveChanged: mayHaveChanged,
-        onChange: listener,
-      );
-
-      verify(listener(0)).called(1);
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-
-      sub.flush();
-
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-
-      counter.increment();
-
-      verify(mayHaveChanged()).called(1);
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-
-      counter.increment();
-
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-
-      sub.flush();
-
-      verify(listener(2)).called(1);
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-
-      counter.increment();
-
-      verify(mayHaveChanged()).called(1);
-      verifyNoMoreInteractions(mayHaveChanged);
-      verifyNoMoreInteractions(listener);
-    });
-
     test('noop if no provider was "dirty"', () {
       final counter = Counter();
       final provider = StateNotifierProvider<Counter>((_) => counter);
@@ -618,129 +572,14 @@ void main() {
         onChange: listener,
       );
 
-      verify(listener(0)).called(1);
-      verifyNoMoreInteractions(listener);
-
-      sub.flush();
-      verifyNoMoreInteractions(listener);
-
-      counter..increment()..increment();
-
-      verifyNoMoreInteractions(listener);
-
-      sub.flush();
-
-      verify(listener(2)).called(1);
-      verifyNoMoreInteractions(listener);
-
-      sub.flush();
-
-      verifyNoMoreInteractions(listener);
-    });
-
-    test('on update`', () async {
-      final container = ProviderContainer();
-      final counter = Counter();
-      final provider = StateNotifierProvider<Counter>((_) => counter);
-      final mayHaveChanged = MockMarkMayHaveChanged();
-      final listener = ListenerMock();
-
-      final sub = provider.state.addLazyListener(
-        container,
-        mayHaveChanged: mayHaveChanged,
-        onChange: listener,
-      );
-
-      verify(listener(0)).called(1);
-      verifyNoMoreInteractions(listener);
-
       counter.increment();
-      verifyNoMoreInteractions(listener);
+      sub.flush();
 
-      counter.increment();
-      verifyNoMoreInteractions(listener);
+      clearInteractions(listener);
 
       sub.flush();
 
-      verify(listener(2)).called(1);
       verifyNoMoreInteractions(listener);
-    });
-
-    test('in dependency order', () async {
-      final container = ProviderContainer();
-      final counter = Counter();
-      final counter2 = Counter();
-      final counter3 = Counter();
-
-      final provider = StateNotifierProvider<Counter>((_) => counter);
-      final provider2 = StateNotifierProvider<Counter>((ref) {
-        ref.watch(provider);
-        return counter2;
-      });
-      final provider3 = StateNotifierProvider<Counter>((ref) {
-        ref.watch(provider2);
-        return counter3;
-      });
-
-      final mayHaveChanged = MockMarkMayHaveChanged();
-      final listener = ListenerMock('first');
-      final sub = provider.state.addLazyListener(
-        container,
-        mayHaveChanged: mayHaveChanged,
-        onChange: listener,
-      );
-
-      final mayHaveChanged2 = MockMarkMayHaveChanged();
-      final listener2 = ListenerMock('second');
-      final sub2 = provider2.state.addLazyListener(
-        container,
-        mayHaveChanged: mayHaveChanged2,
-        onChange: listener2,
-      );
-
-      final mayHaveChanged3 = MockMarkMayHaveChanged();
-      final listener3 = ListenerMock('third');
-      final sub3 = provider3.state.addLazyListener(
-        container,
-        mayHaveChanged: mayHaveChanged3,
-        onChange: listener3,
-      );
-
-      verify(listener(0)).called(1);
-      verifyNoMoreInteractions(listener);
-      verify(listener2(0)).called(1);
-      verifyNoMoreInteractions(listener2);
-      verify(listener3(0)).called(1);
-      verifyNoMoreInteractions(listener3);
-
-      counter3.increment();
-      counter2.increment();
-      counter.increment();
-
-      verifyInOrder([
-        mayHaveChanged3(),
-        mayHaveChanged2(),
-        mayHaveChanged(),
-      ]);
-
-      sub3.flush();
-
-      verify(listener3(1)).called(1);
-      verifyNoMoreInteractions(listener);
-      verifyNoMoreInteractions(listener2);
-      verifyNoMoreInteractions(listener3);
-
-      sub2.flush();
-      verify(listener2(1)).called(1);
-      verifyNoMoreInteractions(listener);
-      verifyNoMoreInteractions(listener2);
-      verifyNoMoreInteractions(listener3);
-
-      sub.flush();
-      verify(listener(1)).called(1);
-      verifyNoMoreInteractions(listener);
-      verifyNoMoreInteractions(listener2);
-      verifyNoMoreInteractions(listener3);
     });
   });
 }

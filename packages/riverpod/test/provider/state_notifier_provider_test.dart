@@ -125,14 +125,14 @@ void main() {
       onChange: listener,
     );
 
-    verify(listener(0)).called(1);
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(0));
 
     container.read(provider).increment();
 
-    verifyNoMoreInteractions(listener);
+    verifyOnly(listener, listener(1));
+
     sub.read();
-    verify(listener(1)).called(1);
+
     verifyNoMoreInteractions(listener);
 
     container.dispose();

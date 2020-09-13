@@ -655,10 +655,10 @@ class ProviderElement<Created, Listened> implements ProviderReference {
         _mustRecomputeState = false;
       }
       _dirty = false;
-      if (_notifyDidChangeLastNotificationCount != _notificationCount) {
-        _notifyDidChangeLastNotificationCount = _notificationCount;
-        _notifyDidChange();
-      }
+      // if (_notifyDidChangeLastNotificationCount != _notificationCount) {
+      //   _notifyDidChangeLastNotificationCount = _notificationCount;
+      //   _notifyDidChange();
+      // }
       assert(!_dirty, 'flush did not reset the dirty flag for $provider');
       assert(
         !_dependencyMayHaveChanged,
@@ -706,6 +706,7 @@ class ProviderElement<Created, Listened> implements ProviderReference {
     }
     _notificationCount++;
     notifyMayHaveChanged();
+    _notifyDidChange();
   }
 
   /// Notify that this provider **may** have changed.
@@ -743,17 +744,17 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
       return;
     }
     _dirty = true;
-    for (final listener in _listeners) {
-      if (listener.mayHaveChanged != null) {
-        _runGuarded(listener.mayHaveChanged);
-      }
-    }
     if (_didMount) {
       for (final observer in _container._observers) {
         _runUnaryGuarded(
           observer.mayHaveChanged,
           _origin,
         );
+      }
+    }
+    for (final listener in _listeners) {
+      if (listener.mayHaveChanged != null) {
+        _runGuarded(listener.mayHaveChanged);
       }
     }
   }

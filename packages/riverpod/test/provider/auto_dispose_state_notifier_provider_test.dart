@@ -159,16 +159,16 @@ void main() {
       mayHaveChanged: () {},
       onChange: listener,
     );
-    verify(listener(argThat(equals(0)))).called(1);
-    verifyNoMoreInteractions(listener);
 
-    notifier.increment();
+    verifyOnly(listener, listener(0));
 
-    verifyNoMoreInteractions(listener);
+    container.read(provider).increment();
+
+    verifyOnly(listener, listener(1));
+
     sub.read();
-    verify(listener(1)).called(1);
-    verifyNoMoreInteractions(listener);
 
+    verifyNoMoreInteractions(listener);
     container.dispose();
     await Future.value(null);
 

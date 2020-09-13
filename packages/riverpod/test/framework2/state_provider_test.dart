@@ -10,6 +10,29 @@ void main() {
     container.dispose();
   });
 
+  test('synchronously calls on change', () {
+    final provider = StateProvider((ref) => 0);
+
+    var changeCount = 0;
+
+    final sub = container.listen(
+      provider,
+      didChange: (sub) => changeCount++,
+    );
+
+    expect(changeCount, 0);
+
+    sub.read().state++;
+
+    expect(changeCount, 1);
+
+    sub.read().state++;
+
+    expect(changeCount, 2);
+    expect(sub.read().state, 2);
+    expect(changeCount, 2);
+  });
+
   group('StateProvider.autoDispose', () {
     test('creates a new controller when no-longer listened', () async {
       final provider = StateProvider.autoDispose((ref) => 0);
