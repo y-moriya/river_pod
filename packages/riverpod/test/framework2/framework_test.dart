@@ -228,10 +228,112 @@ void main() {
     expect(callCount, 1);
   });
 
-  test('ref.listen(provider)', () {}, skip: true);
+  group('ref.listen(provider)', () {
+    test('calls listener synchronously on known change', () {}, skip: true);
+
+    test('calls listener at the end of the event-loop on potential change',
+        () {},
+        skip: true);
+
+    test('no-longer calls listener after one dependency changed', () {},
+        skip: true);
+  }, skip: true);
+
   test('ref.onChange()', () {}, skip: true);
-  test('ref.onDispose run synchronously on dependency change', () {},
-      skip: true);
+
+  test(
+    'cannot register ref.onDispose after dependency changed and before state is re-created',
+    () {},
+    skip: true,
+  );
+
+  test('ref.onDispose of dependencies called before listeners', () {
+    final dispose = OnDisposeMock();
+    final mayHaveChanged = MayHaveChangedMock<StateController<int>>();
+    final didChange = DidChangedMock<StateController<int>>();
+
+    final dep = StateProvider((ref) => 0);
+    final provider = Provider((ref) {
+      ref.watch(dep);
+      ref.onDispose(dispose);
+    });
+
+    final sub = container.listen(
+      dep,
+      mayHaveChanged: mayHaveChanged,
+      didChange: didChange,
+    );
+
+    container.read(provider);
+
+    verifyZeroInteractions(dispose);
+    verifyZeroInteractions(mayHaveChanged);
+    verifyZeroInteractions(didChange);
+
+    container.read(dep).state++;
+
+    verifyInOrder([
+      mayHaveChanged(sub),
+      dispose(),
+      didChange(sub),
+    ]);
+
+    verifyNoMoreInteractions(dispose);
+    verifyNoMoreInteractions(mayHaveChanged);
+    verifyNoMoreInteractions(didChange);
+  });
+
+  test('ref.onDispose is not called synchronously on peer-dependency change',
+      () {
+    final dispose = OnDisposeMock();
+    final peerDep = StateProvider((ref) => 0);
+    final dep = Provider((ref) => ref.watch(peerDep).state);
+    final provider = Provider((ref) {
+      ref.onDispose(dispose);
+      return ref.watch(dep);
+    });
+
+    final sub = container.listen(provider);
+
+    expect(sub.read(), 0);
+
+    verifyZeroInteractions(dispose);
+
+    container.read(peerDep).state++;
+
+    verifyNoMoreInteractions(dispose);
+
+    expect(sub.read(), 1);
+
+    verifyOnly(dispose, dispose());
+  });
+
+  test('ref.onDispose called synchronously on dependency change', () {
+    final dispose = OnDisposeMock();
+    final dep = StateProvider((ref) => 0);
+    final provider = Provider((ref) {
+      ref.onDispose(dispose);
+      return ref.watch(dep).state;
+    });
+
+    final sub = container.listen(provider);
+
+    expect(sub.read(), 0);
+
+    verifyZeroInteractions(dispose);
+
+    container.read(dep).state++;
+
+    verifyOnly(dispose, dispose());
+
+    container.read(dep).state++;
+
+    verifyNoMoreInteractions(dispose);
+
+    expect(sub.read(), 2);
+
+    verifyNoMoreInteractions(dispose);
+  });
 
   test('re-evaluating a provider can stop listening to a dependency', () {
     final first = StateProvider((ref) => 0, name: 'first');

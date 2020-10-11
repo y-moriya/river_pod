@@ -1,3 +1,51 @@
+# Unreleased (major)
+
+- `ProviderContainer.listen(didChange: )` is now called immediately after
+  a provider is known to have changed.
+
+- "dispose" listeners added with `ref.onDispose` are now called synchronously
+  after a dependency changed.
+
+  Consider:
+
+  ```dart
+  final counter = StateProvider((ref) => 0);
+
+  final anotherProvider = Provider((ref) {
+    ref.onDispose(() { /* Do something */ });
+    return Whatever();
+  })
+  ```
+
+  Before, when `counter` changed, `anotherProvider` wasn't immediately disposed.
+  Instead, it was disposed the next time `anotherProvider` was read, right
+  before a new state was created.
+
+  Now, `anotherProvider` is disposed as soon as `counter` changes.
+
+- Reversed the order in which `ProviderObserver.mayHaveChanged` is notified
+  when a graph of providers is updated.
+  Consider:
+
+  ```dart
+  final first = StateProvider((ref) => 0):
+  final second = Provider((ref) => ref.watch(first).state);
+  ```
+
+  Before, changing the state of `first` called the observer with:
+
+  ```dart
+  observer.mayHaveChanged(second);
+  observer.mayHaveChanged(first);
+  ```
+
+  now, we have:
+
+  ```dart
+  observer.mayHaveChanged(first);
+  observer.mayHaveChanged(second);
+  ```
+
 # 0.11.0
 
 - `package:riverpod/riverpod.dart` now exports `StateNotifier`
@@ -25,33 +73,6 @@
 
   If you do not use this lint, prefer using the default import instead, to not
   pollute your auto-complete.
-
-- `ProviderContainer.listen(didChange: )` is now called immediately after
-  a provider is known to have changed.
-
-- Reversed the order in which `ProviderObserver.mayHaveChanged` is notified
-  when a graph of providers is updated.
-  Consider:
-
-  ```dart
-  final first = StateProvider((ref) => 0):
-  final second = Provider((ref) => ref.watch(first).state);
-  ```
-
-  Before, changing the state of `first` called the observer with:
-
-  ```dart
-  observer.mayHaveChanged(second);
-  observer.mayHaveChanged(first);
-  ```
-
-  now, we have:
-
-  ```dart
-  observer.mayHaveChanged(first);
-  observer.mayHaveChanged(second);
-  ```
-
 
 # 0.8.0
 

@@ -767,14 +767,15 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
 
   @protected
   void _notifyDidChange() {
+    for (final dependent in _dependents) {
+      dependent._runOnDispose();
+      dependent._markDependencyMayHaveChanged();
+    }
+
     for (final listener in _listeners) {
       if (listener.didChange != null) {
         _runGuarded(listener.didChange);
       }
-    }
-
-    for (final dependent in _dependents) {
-      dependent._markDependencyMayHaveChanged();
     }
 
     for (final observer in _container._observers) {
