@@ -242,10 +242,32 @@ void main() {
   test('ref.onChange()', () {}, skip: true);
 
   test(
-    'cannot register ref.onDispose after dependency changed and before state is re-created',
-    () {},
-    skip: true,
-  );
+      'supports adding onDispose listeners between dependency change and next read',
+      () {
+    final dispose = OnDisposeMock();
+    final dispose2 = OnDisposeMock();
+
+    final dep = StateProvider((ref) => 0);
+    final provider = Provider((ref) {
+      ref.watch(dep);
+      ref.onDispose(dispose);
+      return ref;
+    });
+
+    final ref = container.read(provider);
+
+    verifyZeroInteractions(dispose);
+
+    container.read(dep).state++;
+
+    verifyOnly(dispose, dispose());
+
+    ref.onDispose(dispose2);
+
+    expect(container.read(provider), ref);
+    verifyOnly(dispose2, dispose2());
+    verifyNoMoreInteractions(dispose);
+  });
 
   test('ref.onDispose of dependencies called before listeners', () {
     final dispose = OnDisposeMock();
