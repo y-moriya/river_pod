@@ -3,11 +3,21 @@ module.exports = {
     "getting_started",
     {
       type: "category",
+      label: "Guides",
+      collapsed: false,
+      items: [
+        "cookbooks/testing",
+        //"cookbooks/refresh",
+      ],
+    },
+    {
+      type: "category",
       label: "Concepts",
       items: [
         "concepts/providers",
         "concepts/reading",
         "concepts/combining_providers",
+        "concepts/provider_observer",
         // "concepts/computed",
         {
           type: "category",
@@ -21,15 +31,7 @@ module.exports = {
     },
     {
       type: "category",
-      label: "Cookbooks",
-      items: [
-        "cookbooks/testing",
-        //"cookbooks/refresh",
-      ],
-    },
-    {
-      type: "category",
-      label: "Examples",
+      label: "Official examples",
       items: [
         {
           type: "link",
@@ -53,7 +55,51 @@ module.exports = {
     },
     {
       type: "category",
+      label: "Third party examples",
+      items: [
+        {
+          type: "link",
+          label: "Android Launcher",
+          href: "https://github.com/lohanidamodar/fl_live_launcher",
+        },
+        {
+          type: "link",
+          label: "Worldtime Clock",
+          href: "https://github.com/lohanidamodar/flutter_worldtime",
+        },
+        {
+          type: "link",
+          label: "Dictionary App",
+          href: "https://github.com/lohanidamodar/fl_dictio",
+        },
+        {
+          type: "link",
+          label: "Firebase Starter",
+          href:
+            "https://github.com/lohanidamodar/flutter_firebase_starter/tree/feature/riverpod",
+        },
+        {
+          type: "link",
+          label: "Time Tracking App (with Firebase)",
+          href:
+            "https://github.com/bizz84/starter_architecture_flutter_firebase",
+        },
+        {
+          type: "link",
+          label: "ListView paging with search",
+          href: "https://github.com/tbm98/flutter_loadmore_search",
+        },
+        {
+          type: "link",
+          label: "Resocoder's Weather Bloc to Weather Riverpod",
+          href: "https://github.com/campanagerald/flutter-bloc-library-v1-tutorial",
+        },
+      ],
+    },
+    {
+      type: "category",
       label: "Api references",
+      collapsed: false,
       items: [
         {
           type: "link",

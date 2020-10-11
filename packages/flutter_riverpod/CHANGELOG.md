@@ -1,3 +1,15 @@
+# 0.11.1
+
+- Fixed a bug where hot-reload did not work for `ConsumerWidget`/`Consumer`
+
+# 0.11.0
+
+- `package:flutter_riverpod/flutter_riverpod.dart` now exports `StateNotifier`
+- Marked the providers with `@sealed` so that the IDE warns against
+  implementing/subclassing providers.
+- Fix mistakes in `AsyncValue.guard`'s documentation (thanks @mono0926)
+- Loosened the version constraints of `freezed_annotation` to support `0.12.0`
+
 # 0.10.1
 
 - Fixed invalid version error
@@ -280,7 +292,7 @@ Fixed a bug that prevented the use of `ConsumerWidget` under normal circumstance
 # 0.5.0
 
 - Changed `ComputedFamily` into `Computed.family`
-- Added [AsyncValue.guard](https://pub.dev/documentation/riverpod/latest/riverpod/AsyncValue/guard.html to simplify transforming a Future into an AsyncValue.
+- Added [AsyncValue.guard](https://pub.dev/documentation/riverpod/latest/all/AsyncValue/guard.html to simplify transforming a Future into an AsyncValue.
 - Improved the documentation of the different providers
 
 # 0.4.0

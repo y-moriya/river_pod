@@ -3,13 +3,34 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
-import 'package:state_notifier/state_notifier.dart';
 
 void main() {
   testWidgets('can extend ConsumerWidget', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyWidget()));
 
     expect(find.text('hello world'), findsOneWidget);
+  });
+
+  testWidgets('hot-reload forces the widget to refresh', (tester) async {
+    var buildCount = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        child: Consumer(builder: (context, watch, _) {
+          buildCount++;
+          return Container();
+        }),
+      ),
+    );
+
+    expect(find.byType(Container), findsOneWidget);
+    expect(buildCount, 1);
+
+    // ignore: unawaited_futures
+    tester.binding.reassembleApplication();
+    await tester.pump();
+
+    expect(find.byType(Container), findsOneWidget);
+    expect(buildCount, 2);
   });
 
   testWidgets(

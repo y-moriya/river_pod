@@ -56,6 +56,7 @@ part 'common.freezed.dart';
 /// - The package Freezed (https://github.com/rrousselgit/freezed), which have
 ///   generated this [AsyncValue] class and explains how [map]/[when] works.
 @freezed
+@sealed
 abstract class AsyncValue<T> with _$AsyncValue<T> {
   const AsyncValue._();
 
@@ -103,7 +104,7 @@ abstract class AsyncValue<T> with _$AsyncValue<T> {
   ///
   ///
   /// ```dart
-  /// class MyNotifier extends StateNotifier<AsyncValue<MyData> {
+  /// class MyNotifier extends StateNotifier<AsyncValue<MyData>> {
   ///   MyNotifier(): super(const AsyncValue.loading()) {
   ///     _fetchData();
   ///   }
@@ -113,7 +114,7 @@ abstract class AsyncValue<T> with _$AsyncValue<T> {
   ///     // does the try/catch for us like previously
   ///     state = await AsyncValue.guard(() async {
   ///       final response = await dio.get('my_api/data');
-  ///       final data = Data.fromJson(response);
+  ///       return Data.fromJson(response);
   ///     });
   ///   }
   /// }

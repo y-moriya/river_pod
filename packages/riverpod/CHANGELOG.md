@@ -1,3 +1,11 @@
+# 0.11.0
+
+- `package:riverpod/riverpod.dart` now exports `StateNotifier`
+- Marked the providers with `@sealed` so that the IDE warns against
+  implementing/subclassing providers.
+- Fix mistakes in `AsyncValue.guard`'s documentation (thanks @mono0926)
+- Loosened the version constraints of `freezed_annotation` to support `0.12.0`
+
 # 0.10.0
 
 - Fixed a bug where the state of a provider may be disposed when it shouldn't be disposed.
@@ -218,7 +226,7 @@
 # 0.5.0
 
 - Changed `ComputedFamily` into `Computed.family`
-- Added [AsyncValue.guard](https://pub.dev/documentation/riverpod/latest/riverpod/AsyncValue/guard.html to simplify transforming a Future into an AsyncValue.
+- Added [AsyncValue.guard](https://pub.dev/documentation/riverpod/latest/all/AsyncValue/guard.html to simplify transforming a Future into an AsyncValue.
 - Improved the documentation of the different providers
 
 # 0.4.0

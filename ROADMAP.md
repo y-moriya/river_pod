@@ -14,6 +14,12 @@
 - handle errors (out of calls/day, no configurations)
 - Added to riverpod.dev
 
+### Introduction screen
+
+- Insert a nested UncontrollerProviderScope
+- Pass it a ProviderContainer that overrides the repositories & co to use a specific data-set
+
+
 ## riverpod.dev
 
 - Filtering rebuilds
@@ -25,15 +31,21 @@
   - ProviderScope
 - FAQ
   - My Consumer behaves differently inside overlays/transition
+  - How to prefetch data _in the main_
 - cookbooks:
   - migration from provider
   - list items + family, don't pass the id to the item and instead expose a "currentItem" provider
   - canceling http requests when leaving the screen
   - state hydration
   - configurations that change over time
+- DO/DON'T
+  - import lints
+  - DO create a provider for states you want to read multiple times
 
 ## Linter:
 
+- Don't create providers inside `build` (https://github.com/rrousselGit/river_pod/issues/144#issuecomment-695361486)
+- don't mutate other providers inside "create" (https://github.com/rrousselGit/river_pod/issues/144#issuecomment-695764973)
 - wrap with `Consumer`
 - No circular dependency
 - no `ref.read` inside providers
