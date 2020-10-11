@@ -205,15 +205,43 @@ void main() {
     expect(child.read(provider), 42);
   });
 
+  test(
+      'ProviderException not cleared if dependency mayHaveChanged but did not change',
+      () {
+    var callCount = 0;
+    final atom = StateProvider((ref) => 0);
+    final dependency = Provider((ref) => ref.watch(atom).state);
+    final provider = Provider((ref) {
+      callCount++;
+      ref.watch(dependency);
+      if (callCount == 1) {
+        throw Error();
+      }
+    });
+
+    expect(() => container.read(provider), throwsA(isA<ProviderException>()));
+    expect(callCount, 1);
+
+    container.read(atom).state = 0;
+
+    expect(() => container.read(provider), throwsA(isA<ProviderException>()));
+    expect(callCount, 1);
+  });
+
+  test('ref.listen(provider)', () {}, skip: true);
+  test('ref.onChange()', () {}, skip: true);
+  test('ref.onDispose run synchronously on dependency change', () {},
+      skip: true);
+
   test('re-evaluating a provider can stop listening to a dependency', () {
-    final first = StateProvider((ref) => 0);
-    final second = StateProvider((ref) => 0);
+    final first = StateProvider((ref) => 0, name: 'first');
+    final second = StateProvider((ref) => 0, name: 'second');
     final computed = Provider<String>((ref) {
       if (ref.watch(first).state == 0) {
         return ref.watch(second).state.toString();
       }
       return 'fallback';
-    });
+    }, name: 'computed');
     final firstElement = container.readProviderElement(first);
     final secondElement = container.readProviderElement(second);
     final computedElement = container.readProviderElement(computed);

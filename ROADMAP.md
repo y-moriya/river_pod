@@ -34,8 +34,11 @@
 
 ## Linter:
 
+- wrap with `Consumer`
 - No circular dependency
-- warn watch(autoDispose) in non-autoDispose provider
+- no `ref.read` inside providers
+- no `ref.watch` outide providers
+- no `context.read` inside `build`
 - `always_specify_name`
 - `name_match_variable`
 - extract widget as class for rebuild optimization

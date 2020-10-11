@@ -510,24 +510,25 @@ class ProviderElement<Created, Listened> implements ProviderReference {
   @override
   ProviderContainer get container => _container;
 
-  Set<ProviderElement> _dependents;
+  final _dependents = <ProviderElement>{};
 
   /// All the [ProviderElement]s that depend on this [ProviderElement].
   Set<ProviderElement> get dependents => {...?_dependents};
+
+  final _listeners = LinkedList<_Listener<Listened>>();
 
   /// Whether this [ProviderElement] is currently listened or not.
   ///
   /// This maps to listeners added with [listen].
   /// See also [mayNeedDispose], called when [hasListeners] may have changed.
-  bool get hasListeners => _listeners.isNotEmpty;
+  bool get hasListeners => _listeners.isNotEmpty || _dependents.isNotEmpty;
 
-  final _listeners = LinkedList<_Listener<Listened>>();
-  var _subscriptions = <ProviderElement, ProviderSubscription>{};
-  Map<ProviderElement, ProviderSubscription> _previousSubscriptions;
+  var _dependencies = <ProviderElement>{};
+  Set<ProviderElement> _previousDependencies;
   DoubleLinkedQueue<void Function()> _onDisposeListeners;
+  bool _hasAnyDependencyChanged = false;
 
   int _notificationCount = 0;
-  int _notifyDidChangeLastNotificationCount = 0;
   bool _debugIsFlushing = false;
   bool _dirty = true;
   // initialized to true so that the initial state creation don't notify listeners
@@ -586,25 +587,12 @@ class ProviderElement<Created, Listened> implements ProviderReference {
     assert(_debugAssertCanDependOn(provider), '');
 
     final element = _container.readProviderElement(provider);
-    final sub = _subscriptions.putIfAbsent(element, () {
-      final previousSub = _previousSubscriptions?.remove(element);
-      if (previousSub != null) {
-        return previousSub;
-      }
-      element._dependents ??= {};
+    if (_dependencies.add(element)) {
+      _previousDependencies?.remove(element);
       element._dependents.add(this);
-      return element.listen(
-        mayHaveChanged: _markDependencyMayHaveChanged,
-      );
-    }) as ProviderSubscription<T>;
-    return sub.read();
-  }
-
-  void _markDependencyMayHaveChanged(ProviderSubscription sub) {
-    if (!_dependencyMayHaveChanged) {
-      _dependencyMayHaveChanged = true;
-      notifyMayHaveChanged();
     }
+
+    return element.getExposedValue();
   }
 
   /// Listen to this provider.
@@ -630,6 +618,9 @@ class ProviderElement<Created, Listened> implements ProviderReference {
 
   /// {@macro riverpod.flush}
   void flush() {
+    if (!_dirty) {
+      return;
+    }
     assert(() {
       _debugIsFlushing = true;
       return true;
@@ -637,28 +628,23 @@ class ProviderElement<Created, Listened> implements ProviderReference {
 
     try {
       if (_dependencyMayHaveChanged || _mustRecomputeState) {
-        _dependencyMayHaveChanged = false;
-        // must be executed before _runStateCreate() so that errors during
-        // creation are not silenced
-        _exception = null;
-        _runOnDispose();
-
-        var hasAnyDependencyChanged = _mustRecomputeState;
-        for (final sub in _subscriptions.values) {
-          if (sub.flush()) {
-            hasAnyDependencyChanged = true;
-          }
+        for (final sub in _dependencies) {
+          sub.flush();
         }
-        if (hasAnyDependencyChanged) {
+        if (_hasAnyDependencyChanged || _mustRecomputeState) {
+          _hasAnyDependencyChanged = false;
+          // must be executed before _runStateCreate() so that errors during
+          // creation are not silenced
+          _exception = null;
+          _runOnDispose();
           _runStateCreate();
+
+          // Executed after _runStateCreate on purpose
+          _mustRecomputeState = false;
         }
-        _mustRecomputeState = false;
+        _dependencyMayHaveChanged = false;
       }
       _dirty = false;
-      // if (_notifyDidChangeLastNotificationCount != _notificationCount) {
-      //   _notifyDidChangeLastNotificationCount = _notificationCount;
-      //   _notifyDidChange();
-      // }
       assert(!_dirty, 'flush did not reset the dirty flag for $provider');
       assert(
         !_dependencyMayHaveChanged,
@@ -705,6 +691,9 @@ class ProviderElement<Created, Listened> implements ProviderReference {
       return;
     }
     _notificationCount++;
+    for (final dependent in _dependents) {
+      dependent._hasAnyDependencyChanged = true;
+    }
     notifyMayHaveChanged();
     _notifyDidChange();
   }
@@ -721,7 +710,7 @@ class ProviderElement<Created, Listened> implements ProviderReference {
         return true;
       }
       final parentsQueue = DoubleLinkedQueue<ProviderElement>.from(
-        _subscriptions.keys,
+        _dependencies,
       );
 
       while (parentsQueue.isNotEmpty) {
@@ -729,7 +718,7 @@ class ProviderElement<Created, Listened> implements ProviderReference {
         if (parent == _debugCurrentlyBuildingElement) {
           return true;
         }
-        parentsQueue.addAll(parent._subscriptions.keys);
+        parentsQueue.addAll(parent._dependencies);
       }
 
       throw AssertionError('''
@@ -737,6 +726,7 @@ The provider $provider was marked as needing to be recomputed while creating ${_
 but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
 ''');
     }(), '');
+
     if (!_mounted) {
       throw StateError('Cannot call onDispose after a provider was dispose');
     }
@@ -744,6 +734,7 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
       return;
     }
     _dirty = true;
+
     if (_didMount) {
       for (final observer in _container._observers) {
         _runUnaryGuarded(
@@ -752,10 +743,22 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
         );
       }
     }
+
+    for (final dependent in _dependents) {
+      dependent._markDependencyMayHaveChanged();
+    }
+
     for (final listener in _listeners) {
       if (listener.mayHaveChanged != null) {
         _runGuarded(listener.mayHaveChanged);
       }
+    }
+  }
+
+  void _markDependencyMayHaveChanged() {
+    if (!_dependencyMayHaveChanged) {
+      _dependencyMayHaveChanged = true;
+      notifyMayHaveChanged();
     }
   }
 
@@ -766,6 +769,11 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
         _runGuarded(listener.didChange);
       }
     }
+
+    for (final dependent in _dependents) {
+      dependent._markDependencyMayHaveChanged();
+    }
+
     for (final observer in _container._observers) {
       _runBinaryGuarded(
         observer.didUpdateProvider,
@@ -826,11 +834,7 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
   void dispose() {
     _mounted = false;
     _runOnDispose();
-
-    for (final sub in _subscriptions.entries) {
-      sub.key._dependents.remove(this);
-      sub.value.close();
-    }
+    _removeDependendencies(_dependencies);
 
     for (final observer in _container._observers) {
       _runUnaryGuarded(
@@ -839,8 +843,17 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
       );
     }
 
+    _dependents.clear();
     _listeners.clear();
     state.dispose();
+  }
+
+  void _removeDependendencies(Iterable<ProviderElement> dependencies) {
+    for (final dependency in dependencies) {
+      if (dependency._dependents.remove(this)) {
+        dependency.mayNeedDispose();
+      }
+    }
   }
 
   /// Forces the state of a provider to be re-created, even if none of its
@@ -859,8 +872,8 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
   @protected
   void _runStateCreate() {
     final previous = state._createdValue;
-    _previousSubscriptions = _subscriptions;
-    _subscriptions = {};
+    _previousDependencies = _dependencies;
+    _dependencies = {};
     ProviderElement previouslyBuildingElement;
     assert(() {
       previouslyBuildingElement = _debugCurrentlyBuildingElement;
@@ -879,14 +892,14 @@ but $provider does not depend on ${_debugCurrentlyBuildingElement.provider}.
         _debugCurrentlyBuildingElement = previouslyBuildingElement;
         return true;
       }(), '');
-      if (_previousSubscriptions != null) {
-        for (final sub in _previousSubscriptions.entries) {
-          sub.key._dependents.remove(this);
-          sub.value.close();
-        }
-      }
-      _previousSubscriptions = null;
+      _removeDependendencies(_previousDependencies);
+      _previousDependencies = null;
     }
+  }
+
+  @override
+  String toString() {
+    return provider.toString();
   }
 }
 

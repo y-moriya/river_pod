@@ -207,7 +207,7 @@ void main() {
       expect(callCount, 1);
     });
 
-    test('update dependents when the future changes', () {
+    test('update dependents when the future changes', () async {
       final futureProvider = StateProvider((ref) => Future.value(42));
       // a FutureProvider that can rebuild with a new future
       final provider = FutureProvider((ref) => ref.watch(futureProvider).state);
@@ -219,12 +219,12 @@ void main() {
       final container = ProviderContainer();
       final futureController = container.read(futureProvider);
 
-      expect(container.read(dependent), futureController.state);
+      await expectLater(container.read(dependent), completion(42));
       expect(callCount, 1);
 
       futureController.state = Future.value(21);
 
-      expect(container.read(dependent), futureController.state);
+      await expectLater(container.read(dependent), completion(21));
       expect(callCount, 2);
     });
 

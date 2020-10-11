@@ -36,7 +36,6 @@ void main() {
 
       return '${ref.watch(provider0.state)} $value';
     });
-    final listener = Listener<String>();
     final container = ProviderContainer();
 
     container.read(provider0.state);
@@ -48,45 +47,41 @@ void main() {
       return p.provider == provider1.state;
     });
 
-    computed.watchOwner(container, listener);
+    final sub = container.listen(computed);
 
+    expect(sub.read(), '0 0');
     expect(buildCount, 1);
     expect(familyState0.hasListeners, true);
     expect(familyState1.hasListeners, false);
-    verify(listener('0 0')).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier0.increment();
 
+    expect(sub.flush(), isTrue);
+    expect(sub.read(), '1 1');
     expect(buildCount, 2);
-    verify(listener('1 1')).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier1.increment();
 
+    expect(sub.flush(), isFalse);
     expect(buildCount, 2);
-    verifyNoMoreInteractions(listener);
 
     // changing the provider that computed is subscribed to
     container.read(stateProvider).state = 1;
 
+    expect(sub.read(), '1 43');
     expect(buildCount, 3);
-    verify(listener('1 43')).called(1);
-    verifyNoMoreInteractions(listener);
     expect(familyState1.hasListeners, true);
     expect(familyState0.hasListeners, true);
 
     notifier1.increment();
 
+    expect(sub.read(), '1 44');
     expect(buildCount, 4);
-    verify(listener('1 44')).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier0.increment();
 
+    expect(sub.read(), '2 44');
     expect(buildCount, 5);
-    verify(listener('2 44')).called(1);
-    verifyNoMoreInteractions(listener);
   });
 
   test('Stops listening to a provider when recomputed but no longer using it',
@@ -104,7 +99,6 @@ void main() {
           ? ref.watch(provider0.state)
           : ref.watch(provider1.state);
     });
-    final listener = Listener<int>();
     final container = ProviderContainer();
 
     container.read(provider0.state);
@@ -116,44 +110,40 @@ void main() {
       return p.provider == provider1.state;
     });
 
-    computed.watchOwner(container, listener);
+    final sub = container.listen(computed);
 
+    expect(sub.read(), 0);
     expect(buildCount, 1);
     expect(familyState0.hasListeners, true);
     expect(familyState1.hasListeners, false);
-    verify(listener(0)).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier0.increment();
 
+    expect(sub.read(), 1);
     expect(buildCount, 2);
-    verify(listener(1)).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier1.increment();
 
+    expect(sub.flush(), isFalse);
     expect(buildCount, 2);
-    verifyNoMoreInteractions(listener);
 
     // changing the provider that computed is subscribed to
     container.read(stateProvider).state = 1;
 
+    expect(sub.read(), 43);
     expect(buildCount, 3);
-    verify(listener(43)).called(1);
-    verifyNoMoreInteractions(listener);
     expect(familyState1.hasListeners, true);
     expect(familyState0.hasListeners, false);
 
     notifier1.increment();
 
+    expect(sub.read(), 44);
     expect(buildCount, 4);
-    verify(listener(44)).called(1);
-    verifyNoMoreInteractions(listener);
 
     notifier0.increment();
 
+    expect(sub.flush(), isFalse);
     expect(buildCount, 4);
-    verifyNoMoreInteractions(listener);
   });
 
   test('Provider.family', () {
@@ -165,17 +155,14 @@ void main() {
     final notifier = Counter();
     final provider = StateNotifierProvider((_) => notifier);
     final container = ProviderContainer();
-    final listener = Listener<String>();
 
-    computed(provider.state).watchOwner(container, listener);
+    final sub = container.listen(computed(provider.state));
 
-    verify(listener('0')).called(1);
-    verifyNoMoreInteractions(listener);
+    expect(sub.read(), '0');
 
     notifier.state = 42;
 
-    verify(listener('42')).called(1);
-    verifyNoMoreInteractions(listener);
+    expect(sub.read(), '42');
   });
 
   test(

@@ -89,12 +89,12 @@ void main() {
   test('unsub to A then make B sub to A then unsub to B disposes B before A',
       () async {
     final container = ProviderContainer();
-    final aDispose = OnDisposeMock();
+    final aDispose = OnDisposeMock('a');
     final a = Provider.autoDispose((ref) {
       ref.onDispose(aDispose);
       return 42;
     });
-    final bDispose = OnDisposeMock();
+    final bDispose = OnDisposeMock('b');
     final b = Provider.autoDispose((ref) {
       ref.onDispose(bDispose);
       ref.watch(a);
@@ -122,13 +122,13 @@ void main() {
 
   test('chain', () async {
     final container = ProviderContainer();
-    final onDispose = OnDisposeMock();
+    final onDispose = OnDisposeMock('1');
     var value = 42;
     final provider = Provider.autoDispose((ref) {
       ref.onDispose(onDispose);
       return value;
     });
-    final onDispose2 = OnDisposeMock();
+    final onDispose2 = OnDisposeMock('2');
     final provider2 = Provider.autoDispose((ref) {
       ref.onDispose(onDispose2);
       return ref.watch(provider);
@@ -377,7 +377,16 @@ void main() {
 Future<void> idle() => Future<void>.value();
 
 class OnDisposeMock extends Mock {
+  OnDisposeMock([this.label = '']);
+
+  final String label;
+
   void call();
+
+  @override
+  String toString() {
+    return '${super.toString()}($label)';
+  }
 }
 
 class Listener extends Mock {
