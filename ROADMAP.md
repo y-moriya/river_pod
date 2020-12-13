@@ -23,12 +23,14 @@
 ## riverpod.dev
 
 - Filtering rebuilds
+- "why is my state disposed with autoDisposed?" (read when unlistened)
 - pre-fetch a provider
 - Testing (without flutter, mocking FutureProvider)
 - How it works
 - The differences between hooks and not hooks
 - fundamentals
   - ProviderScope
+- talks and articles
 - FAQ
   - My Consumer behaves differently inside overlays/transition
   - How to prefetch data _in the main_
@@ -44,6 +46,8 @@
 
 ## Linter:
 
+- "unused_widget_parameter"
+- "what caused a widget to rebuild?"
 - Don't create providers inside `build` (https://github.com/rrousselGit/river_pod/issues/144#issuecomment-695361486)
 - don't mutate other providers inside "create" (https://github.com/rrousselGit/river_pod/issues/144#issuecomment-695764973)
 - wrap with `Consumer`
