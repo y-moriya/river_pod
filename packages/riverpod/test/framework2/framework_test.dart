@@ -229,7 +229,160 @@ void main() {
   });
 
   group('ref.listen(provider)', () {
-    test('calls listener synchronously on known change', () {}, skip: true);
+    test('calls listener synchronously on known change', () {
+      final a = StateProvider((ref) => 0);
+      final b = StateProvider((ref) => 42);
+      final onAChange = OnChange<StateController<int>>();
+      final onBChange = OnChange<StateController<int>>();
+
+      var buildCount = 0;
+      final provider = Provider((ref) {
+        buildCount++;
+        ref.listen<StateController<int>>(a, onAChange);
+        ref.listen<StateController<int>>(b, onBChange);
+      });
+
+      final aState = container.read(a);
+      final bState = container.read(b);
+      container.read(provider);
+
+      expect(buildCount, 1);
+      verifyZeroInteractions(onAChange);
+      verifyZeroInteractions(onBChange);
+
+      aState.state++;
+
+      verifyOnly(onAChange, onAChange(aState));
+      verifyZeroInteractions(onBChange);
+
+      aState.state++;
+
+      verifyOnly(onAChange, onAChange(aState));
+      verifyZeroInteractions(onBChange);
+
+      bState.state++;
+
+      verifyOnly(onBChange, onBChange(bState));
+      verifyNoMoreInteractions(onBChange);
+    });
+
+    test('calls listeners in order', () {
+      final dep = StateProvider((ref) => 0);
+      final onChange = OnChange<StateController<int>>();
+      final onChange2 = OnChange<StateController<int>>();
+
+      final provider = Provider((ref) {
+        ref.listen<StateController<int>>(dep, onChange);
+        ref.listen<StateController<int>>(dep, onChange2);
+      });
+
+      container.read(provider);
+      final state = container.read(dep);
+
+      verifyZeroInteractions(onChange);
+      verifyZeroInteractions(onChange2);
+
+      state.state++;
+
+      verifyInOrder([
+        onChange(state),
+        onChange2(state),
+      ]);
+      verifyNoMoreInteractions(onChange);
+      verifyNoMoreInteractions(onChange2);
+    });
+
+    test('listeners are cleared on dispose', () async {
+      final dep = StateProvider((ref) => 0);
+      final onChange = OnChange<StateController<int>>();
+      final dispose = OnDisposeMock();
+
+      final provider = Provider.autoDispose((ref) {
+        ref.onDispose(dispose);
+        ref.listen<StateController<int>>(dep, onChange);
+      });
+
+      final depElement = container.readProviderElement(dep);
+
+      expect(depElement.hasListeners, isFalse);
+
+      final sub = container.listen(provider);
+
+      expect(depElement.hasListeners, isTrue);
+
+      sub.close();
+      await Future<void>.value();
+
+      verifyOnly(dispose, dispose());
+      verifyZeroInteractions(onChange);
+      expect(depElement.hasListeners, isFalse);
+
+      container.read(dep).state++;
+
+      verifyZeroInteractions(onChange);
+    });
+
+    test('listeners are cleared on refresh', () async {
+      final dep = StateProvider((ref) => 0);
+      final onChange = OnChange<String>();
+
+      var buildCount = 0;
+      final provider = Provider.autoDispose((ref) {
+        buildCount++;
+        final count = buildCount;
+        ref.listen<StateController<int>>(dep, (controller) {
+          onChange('$count ${controller.state}');
+        });
+      });
+
+      container.listen(provider);
+      container.read(dep).state++;
+
+      verifyOnly(onChange, onChange('1 1'));
+
+      container.refresh(provider);
+
+      verifyNoMoreInteractions(onChange);
+
+      container.read(dep).state++;
+
+      verifyOnly(onChange, onChange('2 2'));
+    });
+
+    test('accepts selectors', () async {
+      final dep = StateProvider((ref) => 0);
+      final onChange = OnChange<bool>();
+
+      final provider = Provider((ref) {
+        ref.listen<bool>(dep.select((v) => v.state.isEven), onChange);
+      });
+
+      container.read(provider);
+      container.read(dep).state++;
+
+      verifyZeroInteractions(onChange);
+
+      await Future.value(42);
+
+      verifyOnly(onChange, onChange(false));
+
+      container.read(dep).state += 2;
+
+      verifyNoMoreInteractions(onChange);
+
+      container.read(dep).state++;
+
+      verifyOnly(onChange, onChange(true));
+    });
+
+    test('does not accepts ScopedProviders', () {}, skip: true);
+
+    test('on .autoDispose providers accepts all RootProviders', () {},
+        skip: true);
+
+    test('on non-autoDispose providers accepts only non-autodispose providers',
+        () {},
+        skip: true);
 
     test('calls listener at the end of the event-loop on potential change',
         () {},
@@ -237,9 +390,18 @@ void main() {
 
     test('no-longer calls listener after one dependency changed', () {},
         skip: true);
-  }, skip: true);
 
-  test('ref.onChange()', () {}, skip: true);
+    test(
+        'one dependency may have changed then another dependency did change does not flush the first dependency',
+        () {},
+        skip: true);
+  });
+
+  group('ref.onChange()', () {
+    test('listeners are cleared on dispose', () {}, skip: true);
+
+    test('called synchronously before listeners on change', () {}, skip: true);
+  }, skip: true);
 
   test(
       'supports adding onDispose listeners between dependency change and next read',
@@ -938,4 +1100,8 @@ class OnDisposeMock extends Mock {
 
 class BuildMock extends Mock {
   void call();
+}
+
+class OnChange<T> extends Mock {
+  void call(T value);
 }

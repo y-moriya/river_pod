@@ -22,6 +22,7 @@ export 'src/framework.dart'
         ProviderBase,
         Override,
         ProviderReference,
+        RootProviderListenable,
         ProviderListenable,
         ProviderContainer,
         ProviderObserver,

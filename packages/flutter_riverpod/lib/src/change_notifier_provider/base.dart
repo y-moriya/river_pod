@@ -1,5 +1,6 @@
 part of '../change_notifier_provider.dart';
 
+// ignore: subtype_of_sealed_class
 /// {@macro riverpod.changenotifierprovider}
 @sealed
 class ChangeNotifierProvider<T extends ChangeNotifier>

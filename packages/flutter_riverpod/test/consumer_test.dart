@@ -1,14 +1,38 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/src/internals.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
+class MyBehavior extends ScrollBehavior {}
+
 void main() {
   testWidgets('can extend ConsumerWidget', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: MyWidget()));
 
     expect(find.text('hello world'), findsOneWidget);
+  });
+
+  testWidgets('foo', (tester) async {
+    await tester.pumpWidget(
+      Directionality(
+        textDirection: TextDirection.ltr,
+        child: ProviderScope(
+          child: Consumer(builder: (context, watch, _) {
+            print(Zone.current['foo']);
+
+            return RaisedButton(
+              onPressed: () => print(Zone.current['foo']),
+            );
+          }),
+        ),
+      ),
+    );
+
+    print('click');
+    await tester.tap(find.byType(RaisedButton));
   });
 
   testWidgets('hot-reload forces the widget to refresh', (tester) async {

@@ -40,18 +40,24 @@ String shortHash(Object object) {
 
 /// A base class for all providers, used to consume a provider.
 ///
-/// It is used by [ProviderContainer.listen] and `useProvider` to listen to
-/// both a provider and `provider.select`.
+/// Do not implement or extend.
+@sealed
+abstract class ProviderListenable<Listened> {}
+
+/// A base class for all non-[ScopedProvider] and for `myProvider.select`.
 ///
 /// Do not implement or extend.
-abstract class ProviderListenable<Listened> {}
+@sealed
+abstract class RootProviderListenable<Listened>
+    implements ProviderListenable<Listened> {}
 
 /// A base class for providers that never disposes themselves.
 ///
 /// This is the default base class for providers, unless a provider was marked
 /// with the `.autoDispose` modifier, like: `Provider.autoDispose(...)`
 abstract class AlwaysAliveProviderBase<Created, Listened>
-    extends RootProvider<Created, Listened> {
+    extends RootProvider<Created, Listened>
+    implements RootProviderListenable<Listened> {
   /// Creates an [AlwaysAliveProviderBase].
   AlwaysAliveProviderBase(
     Created Function(ProviderReference ref) create,
@@ -241,7 +247,7 @@ abstract class RootProvider<Created, Listened>
   ///
   /// This will further optimise our widget by rebuilding it only when "isAdult"
   /// changed instead of whenever the age changes.
-  ProviderListenable<Selected> select<Selected>(
+  RootProviderListenable<Selected> select<Selected>(
     Selected Function(Listened value) selector,
   ) {
     return ProviderSelector<Listened, Selected>(
@@ -265,7 +271,8 @@ abstract class RootProvider<Created, Listened>
 
 /// An internal class for `RootProvider.select`.
 @sealed
-class ProviderSelector<Input, Output> implements ProviderListenable<Output> {
+class ProviderSelector<Input, Output>
+    implements RootProviderListenable<Output> {
   /// An internal class for `RootProvider.select`.
   ProviderSelector({
     this.provider,
@@ -418,6 +425,11 @@ abstract class ProviderReference {
   ///   sorted only once.
   /// - if nothing is listening to `sortedTodosProvider`, then no sort if performed.
   T watch<T>(AlwaysAliveProviderBase<Object, T> provider);
+
+  void listen<T>(
+    RootProviderListenable<T> provider,
+    void Function(T value) onChange,
+  );
 }
 
 class _Listener<Listened> extends LinkedListEntry<_Listener<Listened>> {
@@ -598,17 +610,32 @@ class ProviderElement<Created, Listened> implements ProviderReference {
     return element.getExposedValue();
   }
 
-  /// Listen to this provider.
-  ///
-  /// See also:
-  ///
-  /// - [ProviderContainer.listen], which internally calls this method
-  /// - [ProviderReference.watch], which makes a provider listen to another provider.
-  ProviderSubscription<Listened> listen({
+  @override
+  void listen<T>(
+    RootProviderListenable<T> provider,
+    void Function(T value) onChange,
+  ) {
+    final sub = _container.listen<T>(
+      provider,
+      mayHaveChanged: (sub) {
+        return Future(() {
+          if (mounted) {
+            sub.flush();
+          }
+        });
+      },
+      didChange: (sub) => onChange(sub.read()),
+    );
+    onDispose(sub.close);
+  }
+
+  /// Implementation of [ProviderContainer.listen].
+  ProviderSubscription<Listened> _listen({
     void Function(ProviderSubscription<Listened> sub) mayHaveChanged,
     void Function(ProviderSubscription<Listened> sub) didChange,
   }) {
     ProviderSubscription<Listened> sub;
+    // TODO: potentially fuse _Listener and ProviderSubscription for better performances
     final entry = _Listener<Listened>(
       mayHaveChanged: mayHaveChanged == null ? null : () => mayHaveChanged(sub),
       didChange: didChange == null ? null : () => didChange(sub),

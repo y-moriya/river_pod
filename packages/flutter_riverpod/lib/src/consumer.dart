@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:meta/meta.dart';
 
@@ -297,7 +299,10 @@ class _ConsumerState extends State<ConsumerWidget> {
     try {
       _oldDependencies = _dependencies;
       _dependencies = {};
-      return _buildCache = widget.build(context, _reader);
+      return _buildCache =
+          runZoned(() => widget.build(context, _reader), zoneValues: {
+        'foo': 42,
+      });
     } finally {
       assert(() {
         _debugSelecting = false;

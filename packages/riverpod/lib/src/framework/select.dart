@@ -14,8 +14,8 @@ class SelectorSubscription<Input, Output>
     @required ProviderContainer container,
     @required Output Function(Input) selector,
     @required RootProvider<Object, Input> provider,
-    void Function(SelectorSubscription<Input, Output> sub) mayHaveChanged,
-    void Function(SelectorSubscription<Input, Output> sub) didChange,
+    @required void Function(SelectorSubscription<Input, Output> sub) mayHaveChanged,
+    @required void Function(SelectorSubscription<Input, Output> sub) didChange,
   })  : _selector = selector,
         _didChange = didChange {
     _sub = container.listen(

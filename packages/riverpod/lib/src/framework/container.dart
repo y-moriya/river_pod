@@ -149,7 +149,7 @@ class ProviderContainer {
     void Function(ProviderSubscription<Result> sub) didChange,
   }) {
     if (provider is ProviderBase<Object, Result>) {
-      return readProviderElement(provider).listen(
+      return readProviderElement(provider)._listen(
         mayHaveChanged: mayHaveChanged,
         didChange: didChange,
       );
