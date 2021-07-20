@@ -4,8 +4,8 @@
   <ShortName>Riverpod</ShortName>
   <Description>Search Riverpod</Description>
   <InputEncoding>UTF-8</InputEncoding>
-  <Image width="16" height="16" type="image/x-icon">https://y-moriya.github.io/river_pod/river_pod/img/logo.svg</Image>
-  <Url type="text/html" method="get" template="https://y-moriya.github.io/river_pod/river_pod/search?q={searchTerms}"/>
-  <Url type="application/opensearchdescription+xml" rel="self" template="https://y-moriya.github.io/river_pod/river_pod/opensearch.xml" />
-  <moz:SearchForm>https://y-moriya.github.io/river_pod/river_pod/</moz:SearchForm>
+  <Image width="16" height="16" type="image/x-icon">https://y-moriya.github.com/river_pod/river_pod/img/logo.svg</Image>
+  <Url type="text/html" method="get" template="https://y-moriya.github.com/river_pod/river_pod/search?q={searchTerms}"/>
+  <Url type="application/opensearchdescription+xml" rel="self" template="https://y-moriya.github.com/river_pod/river_pod/opensearch.xml" />
+  <moz:SearchForm>https://y-moriya.github.com/river_pod/river_pod/</moz:SearchForm>
 </OpenSearchDescription>
