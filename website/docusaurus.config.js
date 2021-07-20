@@ -26,7 +26,7 @@ module.exports = {
       title: "Riverpod",
       logo: {
         alt: "Riverpod logo",
-        src: "river_pod/img/logo.png",
+        src: "img/logo.png",
       },
       items: [
         {

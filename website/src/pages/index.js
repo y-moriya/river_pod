@@ -76,7 +76,7 @@ function Home() {
       <header className={classnames("hero hero--primary", styles.heroBanner)}>
         <div className="container">
           <h1 className={classnames("hero__title", styles.mainTitle)}>
-            <img src="/img/logo.svg" alt="Riverpod logo"></img>
+            <img src="img/logo.svg" alt="Riverpod logo"></img>
             {siteConfig.title}
           </h1>
           <p className="hero__subtitle">{siteConfig.tagline}</p>
