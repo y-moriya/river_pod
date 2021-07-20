@@ -1,11 +1,11 @@
 module.exports = {
   title: "Riverpod",
   tagline: "Provider, but different",
-  url: "https://y-moriya.github.com/riverpod",
-  baseUrl: "/",
+  url: "https://y-moriya.github.com/river_pod",
+  baseUrl: "/river_pod/",
   favicon: "img/logo.svg",
   organizationName: "y-moriya", // Usually your GitHub org/user name.
-  projectName: "riverpod", // Usually your repo name.
+  projectName: "river_pod", // Usually your repo name.
   themeConfig: {
     googleAnalytics: {
       trackingID: "UA-138675999-4",
@@ -36,7 +36,7 @@ module.exports = {
           position: "left",
         },
         {
-          href: "https://github.com/rrousselGit/river_pod",
+          href: "https://github.com/y-moriya/river_pod",
           label: "GitHub",
           position: "right",
         },
