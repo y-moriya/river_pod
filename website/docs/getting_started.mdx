@@ -5,11 +5,10 @@ title: Getting started
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-Before diving into the inner mechanisms of [Riverpod], let's start with the basics:
-Installing up [Riverpod], then writing a "Hello world".
+[Riverpod]の内部機構に飛び込む前に、まずは基本的なことから始めましょう。  
+[Riverpod]をインストールして、「Hello world」を書いてみましょう。
 
-You can also watch this video which explains the problems that [Riverpod] tries
-to solve.
+また、[Riverpod]が解決しようとしている問題点を説明したビデオもご覧いただけます。
 
 <div class="player">
   <iframe
@@ -20,29 +19,28 @@ to solve.
   ></iframe>
 </div>
 
-(Note: this video does not explain how [Riverpod] works. It only explains the
-problems)
+(注意：このビデオは[Riverpod]の仕組みを説明するものではありません。問題点を説明しているだけです。)
 
-## What package to install
+## どのパッケージをインストールするか
 
-Before anything, you need to be aware that [Riverpod] is spread across multiple packages, with slightly different usage.  
-The variant of [Riverpod] that you will want to install depends on the app you are making.
+何よりもまず、[Riverpod]が複数のパッケージにまたがっており、使い方が微妙に異なることを知っておく必要があります。  
+あなたがインストールしたい[Riverpod]のバリエーションは、あなたが作るアプリによって異なります。
 
-You can refer to the following table to help you decide which package to use:
+どのパッケージを使用するかは、以下の表を参考にしてください。
 
 | app type                  | package name                                                                       | description                                                                          |
 | ------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Flutter + [flutter_hooks] | [hooks_riverpod]                                                                   | A way to use both [flutter_hooks] and [Riverpod] together, while offering small extras. |
-| Flutter only              | [flutter_riverpod]                                                                 | A basic way of using [Riverpod], which does not depend on [flutter_hooks].           |
-| Dart only (No Flutter)    | [riverpod](https://github.com/rrousselGit/river_pod/tree/master/packages/riverpod) | A version of [Riverpod] with all the classes related to Flutter stripped out.            |
+| Flutter + [flutter_hooks] | [hooks_riverpod]                                                                   | [flutter_hooks]と[Riverpod]を一緒に使いながら、ちょっとしたおまけをつける方法です。  |
+| Flutter only              | [flutter_riverpod]                                                                 | [flutter_hooks]に依存しない、[Riverpod]の基本的な使用方法です。                      |
+| Dart only (No Flutter)    | [riverpod](https://github.com/rrousselGit/river_pod/tree/master/packages/riverpod) | [Riverpod]からFlutterに関連するクラスをすべて取り除いたバージョンです。              |
 
-And if it's not clear enough, you can refer to this decision graph:
+また、十分に理解できない場合は、この判断グラフを参考にしてください。
 
 ![package decision graph](/img/package_decision_graph.svg)
 
-## Installing the package
+## パッケージのインストール
 
-Once you know what package you want to install, proceed to add the following to your `pubspec.yaml`:
+インストールしたいパッケージが決まったら、`pubspec.yaml`に以下を追加してください。
 
 <Tabs
   groupId="riverpod"
@@ -67,7 +65,7 @@ dependencies:
   hooks_riverpod: ^1.0.0-dev.6
 ```
 
-Then run `flutter pub get`.
+その後、 `flutter pub get` を実行してください。
 
 </TabItem>
 <TabItem value="flutter_riverpod">
@@ -83,7 +81,7 @@ dependencies:
   flutter_riverpod: ^1.0.0-dev.6
 ```
 
-Then run `flutter pub get`.
+その後、 `flutter pub get` を実行してください。
 
 </TabItem>
 <TabItem value="riverpod">
@@ -96,18 +94,17 @@ dependencies:
   riverpod: ^1.0.0-dev.6
 ```
 
-Then run `pub get`.
+その後、 `pub get` を実行してください。
 
 </TabItem>
 </Tabs>
+これで完了です。あなたのアプリに[Riverpod]が追加されました！
 
-That's it. You've added [Riverpod] to your app!
+## 利用例: Hello world
 
-## Usage example: Hello world
+さて、[Riverpod]のインストールが完了したので、早速使ってみましょう。
 
-Now that we have installed [Riverpod], we can start using it.
-
-The following snippets showcase how to use our new dependency to make a "Hello world":
+次のスニペットは、新しい依存関係を使って「Hello world」を作る方法を紹介しています。
 
 <Tabs
   groupId="riverpod"
@@ -125,27 +122,27 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-// We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
+// ここでは、値（ここでは "Hello world"）を格納する "provider "を作成します。
+// プロバイダを使用することで、公開された値をモック/オーバーライドすることができます。
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
   runApp(
-    // For widgets to be able to read providers, we need to wrap the entire
-    // application in a "ProviderScope" widget.
-    // This is where the state of our providers will be stored.
+    // ウィジェットがプロバイダを読み込めるようにするためには、
+    // アプリケーション全体を「ProviderScope」ウィジェットで包む必要があります。
+    // ここには、私たちのプロバイダーの状態が保存されます。
     ProviderScope(
       child: MyApp(),
     ),
   );
 }
 
-// Note: MyApp is a HookConsumerWidget, from flutter_hooks.
+// 注：MyAppは、flutter_hooksのHookConsumerWidgetです。
 class MyApp extends HookConsumerWidget {
   @override
   Widget build(BuildContext context) {
-    // To read our provider, we can use the hook "ref.watch(".
-    // This is only possible because MyApp is a HookConsumerWidget.
+    // プロバイダを読み取るには、「ref.watch()」というフックを使います。
+    // これは、MyAppがHookConsumerWidgetであるからこそ可能なことです。
     final String value = ref.watch(helloWorldProvider);
 
     return MaterialApp(
@@ -160,8 +157,8 @@ class MyApp extends HookConsumerWidget {
 }
 ```
 
-Which you can then execute with `flutter run`.  
-This will render "Hello world" on your device.
+これを `flutter run` で実行することができます。  
+これで、あなたの端末に "Hello world "が表示されます。
 
 </TabItem>
 <TabItem value="flutter_riverpod">
@@ -170,22 +167,22 @@ This will render "Hello world" on your device.
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-// We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
+// ここでは、値（ここでは "Hello world"）を格納する "provider "を作成します。
+// プロバイダを使用することで、公開された値をモック/オーバーライドすることができます。
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
   runApp(
-    // For widgets to be able to read providers, we need to wrap the entire
-    // application in a "ProviderScope" widget.
-    // This is where the state of our providers will be stored.
+    // ウィジェットがプロバイダを読み込めるようにするためには、
+    // アプリケーション全体を「ProviderScope」ウィジェットで包む必要があります。
+    // ここには、私たちのプロバイダーの状態が保存されます。
     ProviderScope(
       child: MyApp(),
     ),
   );
 }
 
-// Extend ConsumerWidget instead of StatelessWidget, which is exposed by Riverpod
+// StatelessWidgetの代わりに、Riverpodで公開されているConsumerWidgetを拡張します。
 class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -203,8 +200,8 @@ class MyApp extends ConsumerWidget {
 }
 ```
 
-Which you can then execute with `flutter run`.  
-This will render "Hello world" in on your device.
+これを `flutter run` で実行することができます。  
+これで、あなたの端末に "Hello world "が表示されます。
 
 </TabItem>
 <TabItem value="riverpod">
@@ -212,32 +209,32 @@ This will render "Hello world" in on your device.
 ```dart title="lib/main.dart"
 import 'package:riverpod/riverpod.dart';
 
-// We create a "provider", which will store a value (here "Hello world").
-// By using a provider, this allows us to mock/override the value exposed.
+// ここでは、値（ここでは "Hello world"）を格納する "provider "を作成します。
+// プロバイダを使用することで、公開された値をモック/オーバーライドすることができます。
 final helloWorldProvider = Provider((_) => 'Hello world');
 
 void main() {
-  // This object is where the state of our providers will be stored.
+  // このオブジェクトには、プロバイダの状態が保存されます。
   final container = ProviderContainer();
 
-  // Thanks to "container", we can read our provider.
+  // "container" のおかげで、私たちはプロバイダをreadすることができます。
   final value = container.read(helloWorldProvider);
 
   print(value); // Hello world
 }
 ```
 
-Which you can then execute with `dart lib/main.dart`.  
-This will print "Hello world" in the console.
+これを `dart lib/main.dart` で実行することができます。  
+これでコンソールに "Hello world "と表示されます。
 
 </TabItem>
 </Tabs>
 
-## Going further: Installing code snippets
+## さらに詳しく: コードスニペットのインストール
 
-If you are using `Flutter` and `Vscode` , consider using [Flutter Riverpod Snippets](https://marketplace.visualstudio.com/items?itemName=robert-brunhage.flutter-riverpod-snippets)
+`Flutter` と `Vscode` を使用している場合は、[Flutter Riverpod Snippets](https://marketplace.visualstudio.com/items?itemName=robert-brunhage.flutter-riverpod-snippets)の使用を検討してください。
 
-If you are using `Flutter` and `Android Studio` or `IntelliJ`, consider using [Flutter Riverpod Snippets](https://plugins.jetbrains.com/plugin/14641-flutter-riverpod-snippets)
+`Flutter` と `Android Studio` または `IntelliJ` を使用している場合は、[Flutter Riverpod Snippets](https://plugins.jetbrains.com/plugin/14641-flutter-riverpod-snippets)の使用を検討してください。
 
 ![img](/img/snippets/greetingProvider.gif)
 

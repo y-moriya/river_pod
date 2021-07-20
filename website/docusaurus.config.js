@@ -1,10 +1,10 @@
 module.exports = {
   title: "Riverpod",
   tagline: "Provider, but different",
-  url: "https://riverpod.dev",
+  url: "https://y-moriya.github.com/riverpod",
   baseUrl: "/",
   favicon: "img/logo.svg",
-  organizationName: "rrousselgit", // Usually your GitHub org/user name.
+  organizationName: "y-moriya", // Usually your GitHub org/user name.
   projectName: "riverpod", // Usually your repo name.
   themeConfig: {
     googleAnalytics: {
@@ -87,7 +87,7 @@ module.exports = {
           // It is recommended to set document id as docs home page (`docs/` path).
           sidebarPath: require.resolve("./sidebars.js"),
           // Please change this to your repo.
-          editUrl: "https://github.com/rrousselGit/river_pod/edit/master/website/",
+          editUrl: "https://github.com/y-moriya/river_pod/edit/master/website/",
         },
         theme: {
           customCss: require.resolve("./src/css/custom.css"),
