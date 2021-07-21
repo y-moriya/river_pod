@@ -2,40 +2,39 @@
 title: Providers
 ---
 
-Now that we have installed [Riverpod], let's talk about "providers".
+さて、[Riverpod]のインストールが完了したところで、「プロバイダー」について説明します。
 
-Providers are the most important part of a [Riverpod] application.  
-A provider is an object that encapsulate a piece of state and allows listening
-to that state.
+プロバイダは、[Riverpod]アプリケーションの最も重要な部分です。  
+プロバイダとは、状態の一部をカプセル化し、その状態のリスニングを可能にするオブジェクトのことです。
 
-## Why use providers?
+## プロバイダーを使う理由は？
 
-By wrapping a piece of state in a provider, this:
+ステートの一部をプロバイダでラップすることで、
 
-- Allows easily accessing that state in multiple locations.  
-  Providers are a complete replacement for patterns like Singletons,
-  Service Locators, Dependency Injection or InheritedWidgets.
+- 複数の場所でその状態に簡単にアクセスすることができます。 
+  プロバイダは、シングルトン、サービスロケータ、依存性注入、
+  InheritedWidgetsなどのパターンを完全に置き換えるものです。
 
-- Simplifies combining this state with others.  
-  Ever struggled merging multiple objects into one? This scenario is built
-  directly inside providers, with a simple syntax.
+- この状態と他の状態を組み合わせることを簡単にします。  
+  複数のオブジェクトを1つにまとめるのに苦労したことはありませんか？  
+  このシナリオは、シンプルな構文でプロバイダの中に直接組み込まれています。
 
-- Enables performance optimisations.  
-  Whether for filtering widget rebuilds or for caching expensive state computations;
-  providers ensure that only what is impacted by a state change is recomputed.
+- パフォーマンスの最適化が可能になります。  
+  プロバイダは、ウィジェットの再構築をフィルタリングしたり、  
+  高価な状態計算をキャッシュしたりして、状態変化の影響を受けるものだけが再計算されるようにします。
 
-- Increases the testability of your application.  
-  With providers, you do not need complex `setUp`/`tearDown` steps. Furthermore,
-  any provider can be overridden to behave differently during test, which
-  allows easily testing a very specific behavior.
+- アプリケーションのテスタビリティが向上します。  
+  プロバイダーを使えば、複雑な`setUp`/`tearDown`の手順は必要ありません。
+  さらに、どのプロバイダもテスト時に異なる動作をするようにオーバーライドすることができるので、  
+  特定の動作を簡単にテストすることができます。
 
-- Easily integrate with advanced features, such as logging or pull-to-refresh.
+- ロギングやPull-to-refreshなどの高度な機能と簡単に統合できます。
 
-## Creating a provider
+## プロバイダーの作成
 
-Providers come in many variants, but they all work the same way.
+プロバイダーにはさまざまな種類がありますが、仕組みは同じです。
 
-The most common usage is to declare them as global constant like so:
+最も一般的な使い方は、以下のようにグローバル定数として宣言することです。
 
 ```dart
 final myProvider = Provider((ref) {
@@ -44,49 +43,48 @@ final myProvider = Provider((ref) {
 ```
 
 :::note
-Do not be afraid by the global aspect of providers.  
-Providers are fully immutable. Declaring a provider is no different from declaring
-a function, and is testable and maintainable.
+プロバイダーのグローバルな側面に恐れを抱くことはありません。  
+プロバイダは完全に不変（immutable）です。  
+プロバイダを宣言することは、関数を宣言することと同じであり、テスト可能で保守性が高いのです。
 :::
 
-This snippet consists of three components:
+このスニペットは3つの要素で構成されています。
 
-- `final myProvider`, the declaration of a variable.  
-  This variable is what we will use in the future to read the state of our provider.
-  It should always be immutable.
+- `final myProvider` は変数の宣言です。  
+  この変数は、今後、プロバイダーの状態を読み取るために使用します。  
+  これは常に不変でなければなりません。
 
-- `Provider`, the provider that we decided to use.  
-  [Provider] is the most basic of all providers. It exposes an object that never
-  changes.  
-  We could replace [Provider] with other providers like [StreamProvider] or
-  [StateNotifierProvider], to change how the value is interacted with.
+- `Provider`, 我々が使用するプロバイダーです。  
+  [Provider]は、すべてのプロバイダの中で最も基本的なものです。  
+  これは変更されることのないオブジェクトを公開します。  
+  [Provider]を[StreamProvider]や[StateNotifierProvider]など、  
+  他のプロバイダに置き換えることで、値の操作方法を変更することができます。
 
-- A function that creates the shared state.  
-  That function will always receive an object called `ref` as a parameter. This object
-  allows us to read other providers or to perform some operations when the state
-  of our provider will be destroyed.
+- 関数は共有された状態を作成します。  
+  この関数は、常にパラメータとして `ref` というオブジェクトを受け取ります。  
+  このオブジェクトは、他のプロバイダを読み込んだり、  
+  自分のプロバイダの状態が破棄されるときにいくつかの操作を実行することができます。
 
-The type of the object created by the function passed to a provider depends on
-the provider used.  
-For example, the function of a [Provider] can create any object.
-On the other hand, [StreamProvider]'s callback will be expected to return a [Stream].
+プロバイダーに渡された関数で作成されるオブジェクトのタイプは、  
+使用するプロバイダーによって異なります。  
+例えば、[Provider]の関数は、任意のオブジェクトを作成することができます。  
+一方、[StreamProvider]のコールバックは、[Stream]を返すことが期待されます。
 
 :::info
-You can declare as many providers as you want without limitations.  
-As opposed to when using `package:provider`, in [Riverpod] we can have two
-providers expose a state of the same "type":
+プロバイダーは制限なくいくつでも宣言できます。  
+`package:provider`を使う場合とは異なり、  
+Riverpodでは2つのプロバイダが同じ「タイプ」の状態を公開することができます。
 
 ```dart
 final cityProvider = Provider((ref) => 'London');
 final countryProvider = Provider((ref) => 'England');
 ```
 
-The fact that both providers create a `String` does not cause any problem.
+どちらのプロバイダーも `String` を作成するという事実は何の問題もありません。
 :::
 
 :::caution
-For providers to work, you must add [ProviderScope] at the root of your
-Flutter applications:
+プロバイダを動作させるには、Flutterアプリケーションのルートに[ProviderScope]を追加する必要があります。
 
 ```dart
 void main() {
@@ -96,22 +94,22 @@ void main() {
 
 :::
 
-## Performing actions before the state destruction
+## 状態破壊前のアクションの実行
 
-In some cases, the state of a provider may get destroyed or re-created.
-A common use-case in those situations is to perform a cleanup before the state of a provider
-is destroyed, such as closing a `StreamController`.
+場合によっては、プロバイダの状態が破壊されたり、再作成されたりすることもあります。  
+このような状況での一般的な使用例は、`StreamController`をクローズするなど、  
+プロバイダの状態が破壊される前にクリーンアップを実行することです。
 
-This is done using the `ref` object, which is passed to the callback of all providers, using its [onDispose] method.
+これは、すべてのプロバイダのコールバックに渡される `ref` オブジェクトを使って行われ、[onDispose] メソッドを使います。
 
-The following example uses [onDispose] to close a `StreamController`:
+次の例では、[onDispose]を使って`StreamController`を close します。
 
 ```dart
 final example = StreamProvider.autoDispose((ref) {
   final streamController = StreamController<int>();
 
   ref.onDispose(() {
-    // Closes the StreamController when the state of this provider is destroyed.
+    // このプロバイダの状態が破壊されると、StreamControllerをcloseします。
     streamController.close();
   });
 
@@ -120,31 +118,31 @@ final example = StreamProvider.autoDispose((ref) {
 ```
 
 :::note
-Depending on the provider used, it may already take care of the clean-up process.  
-For example, [StateNotifierProvider] will call the `dispose` method of a `StateNotifier`.
+使用するプロバイダーによっては、すでに後始末をしてくれる場合もあります。  
+例えば、[StateNotifierProvider]は`StateNotifier`の`dispose`メソッドを呼び出します。
 :::
 
-## Provider Modifiers
+## Provider Modifier
 
-All Providers have a built-in way to add extra functionalities to your different providers.
+すべてのプロバイダには、異なるプロバイダに追加機能を追加する方法が組み込まれています。
 
-They may add new features to the `ref` object or change slightly how the provider
-is consumed.  
-Modifiers can be used on all providers, with a syntax similar to named constructor:
+それらは、refオブジェクトに新しい機能を追加したり、プロバイダの消費方法を少し変えたりします。  
+Modifierは、名前付きコンストラクタと同様の構文で、すべてのプロバイダで使用できます。
 
 ```dart
 final myAutoDisposeProvider = StateProvider.autoDispose<String>((ref) => 0);
 final myFamilyProvider = Provider.family<String, int>((ref, id) => '$id');
 ```
 
-At the moment, there are two modifiers available:
+現時点では、2つのmodifierが用意されています。
 
-- [`.autoDispose`](/docs/concepts/modifiers/auto_dispose), which will make the provider automatically destroy its state
-  when it is no-longer listened.
-- [`.family`](/docs/concepts/modifiers/family), which allows creating a provider from external parameters.
+- [`.autoDispose`](/docs/concepts/modifiers/auto_dispose),  
+  プロバイダがリストアップされなくなったときに、その状態を自動的に破壊するようにします。
+- [`.family`](/docs/concepts/modifiers/family),  
+  外部のパラメータからプロバイダを作成することができます。
 
 :::note
-A provider can use multiple modifiers at once:
+プロバイダーは一度に複数のModifierを使用することができます。
 
 ```dart
 final userProvider = FutureProvider.autoDispose.family<User, int>((ref, userId) async {
@@ -154,10 +152,10 @@ final userProvider = FutureProvider.autoDispose.family<User, int>((ref, userId) 
 
 :::
 
-That's it for this guide!
+今回のガイドはここまでです。
 
-You can continue with [How to read a provider](/docs/concepts/reading).
-Alternatively, you can see [How to combine providers](/docs/concepts/combining_providers).
+[How to read a provider](/docs/concepts/reading)を続けてご覧いただけます。  
+または、[How to combine providers](/docs/concepts/combining_providers)をご覧ください。
 
 [get_it]: http://pub.dev/packages/get_it
 [inheritedwidget]: https://api.flutter.dev/flutter/widgets/InheritedWidget-class.html
