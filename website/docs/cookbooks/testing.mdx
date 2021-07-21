@@ -5,38 +5,36 @@ title: Testing
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-For any medium to large-scaled applications, it is critical to test the application.
+中規模から大規模のアプリケーションでは、アプリケーションをテストすることが重要です。
 
-To be able to successfully test our application, we will want the following things:
+アプリケーションのテストを成功させるためには、以下のものが必要です。
 
-- No state should be preserved between `test`/`testWidgets`.  
-  This means no global state, or all global-states should be reset after each test.
+- `test`/`testWidgets`の間では、状態を保存してはいけません。   
+  これは、グローバルな状態がない、またはすべてのグローバルな状態が各テストの後にリセットされるべきであることを意味します。
 
-- Being able to force our providers to have a specific state, either through
-  mocking or through manipulating them until we reach the desired state.
+- モックを使ったり、目的の状態になるまで操作したりして、  
+  プロバイダに特定の状態を強制することができます。
 
-Let's see one by one how [Riverpod] helps you with these.
+[Riverpod]がこれらをどのようにサポートするのか、一つずつ見ていきましょう。
 
-## No state should be preserved between `test`/`testWidgets`.
+## `test`/`testWidgets`の間では、状態を保存してはいけません
 
-Since providers are usually declared as global variables, you might worry about
-that one.  
-After all, global state makes testing very difficult, because it can require
-lengthy `setUp`/`tearDown`.
+プロバイダは通常、グローバル変数として宣言されているので、その点は心配ないでしょう。  
+結局のところ、グローバルステートはテストを非常に難しくしています。  
+なぜならば、長い `setUp`/`tearDown` が必要になるからです。
 
-But the reality is: While providers are declared as globals, the state of a provider
-is **not** global.
+しかし、現実には、プロバイダはグローバルに宣言されていますが、プロバイダの状態はグローバルでは**ありません**。
 
-Instead, it is stored in an object named [ProviderContainer], that you may have
-seen if you've read the dart-only examples.  
-If you haven't, know that this [ProviderContainer] object is implicitly created
-by [ProviderScope], the widget that enables [Riverpod] on our project.
+その代わりに、[ProviderContainer]というオブジェクトに格納されています。  
+このオブジェクトは、Dartのみの例をご覧になった方はご存知かもしれません。  
+まだご覧になっていない方は、この[ProviderContainer]オブジェクトは、  
+私たちのプロジェクトで[Riverpod]を有効にするウィジェットである、  
+[ProviderScope]によって暗黙のうちに作成されていることを知っておいてください。
 
-Concretely what this means is, two `testWidgets` using providers do not share
-any state.  
-As such, there is no need for any `setUp`/`tearDown` at all.
+具体的には、プロバイダを利用している2つの`testWidgets`は、状態を共有しないということです。  
+そのため、`SetUp` / `TearDown`は一切必要ありません。
 
-But an example is better than lengthy explanations:
+長々とした説明よりも、例えがあった方がいいですね。
 
 <Tabs
   defaultValue="testWidgets"
@@ -48,13 +46,13 @@ But an example is better than lengthy explanations:
 <TabItem value="testWidgets">
 
 ```dart
-// A Counter implemented and tested using Flutter
+// Flutterで実装・テストされたカウンター
 
-// We declared a provider globally, and we will use it in two tests, to see
-// if the state correctly resets to `0` between tests.
+// グローバルにプロバイダを宣言し、それを2つのテストで使用して、
+// テストの間に状態が正しく `0` にリセットされるかどうかを確認してみましょう。
 final counterProvider = StateProvider((ref) => 0);
 
-// Renders the current state and a button that allows incrementing the state
+// 現在の状態と、状態を増加させるためのボタンをレンダリングします。
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -74,15 +72,15 @@ void main() {
   testWidgets('update the UI when incrementing the state', (tester) async {
     await tester.pumpWidget(ProviderScope(child: MyApp()));
 
-    // The default value is `0`, as declared in our provider
+    // デフォルト値は、プロバイダで宣言されている通り、`0`です。
     expect(find.text('0'), findsOneWidget);
     expect(find.text('1'), findsNothing);
 
-    // Increment the state and re-render
+    // 状態をインクリメントして再レンダリング
     await tester.tap(find.byType(RaisedButton));
     await tester.pump();
 
-    // The state have properly incremented
+    // 状態が適切に増加していることを確認
     expect(find.text('1'), findsOneWidget);
     expect(find.text('0'), findsNothing);
   });
@@ -90,7 +88,7 @@ void main() {
   testWidgets('the counter state is not shared between tests', (tester) async {
     await tester.pumpWidget(ProviderScope(child: MyApp()));
 
-    // The state is `0` once again, with no tearDown/setUp needed
+    // 状態は再び「0」となり、tearDown/setUp は必要ありません。
     expect(find.text('0'), findsOneWidget);
     expect(find.text('1'), findsNothing);
   });
@@ -101,46 +99,46 @@ void main() {
 <TabItem value="test">
 
 ```dart
-// A Counter implemented and tested with Dart only (no dependency on Flutter)
+// Dartのみ（Flutterに依存しない）で実装、テストされたカウンター
 
-// We declared a provider globally, and we will use it in two tests, to see
-// if the state correctly resets to `0` between tests.
+// グローバルにプロバイダを宣言し、それを2つのテストで使用して、
+// テストの間に状態が正しく `0` にリセットされるかどうかを確認してみましょう。
 final counterProvider = StateProvider((ref) => 0);
 
-// Using mockito to keep track of when a provider notify its listeners
+// ProviderがListenerに通知したタイミングを追跡するためにmockitoを使用
 class Listener extends Mock {
   void call(int value);
 }
 
 void main() {
   test('defaults to 0 and notify listeners when value changes', () {
-    // An object that will allow us to read providers
-    // Do not share this between tests.
+    // プロバイダをreadできるようにするためのオブジェクト
+    // これをテスト間で共有しないでください。
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final listener = Listener();
 
-    // Observe a provider and spy the changes.
+    // ProviderをObserveし、その変化を追跡する。
     container.listen<StateController<int>>(
       counterProvider,
       didChange: (sub) => listener(sub.read().state),
     );
 
-    // the listener is called immediatly with 0, the default value
+    // Listnerは、デフォルト値である0ですぐに呼び出されます。
     verify(listener(0)).called(1);
     verifyNoMoreInteractions(listener);
 
-    // We increment the value
+    // 値をインクリメント
     container.read(counterProvider).state++;
 
-    // The listener was called again, but with 1 this time
+    // 再びリスナーが呼ばれたが、今度は1であることを確認する。
     verify(listener(1)).called(1);
     verifyNoMoreInteractions(listener);
   });
 
   test('the counter state is not shared between tests', () {
-    // We use a different ProviderContainer to read our provider.
-    // This unsure that no state is reused between tests
+    // プロバイダの読み込みには、別のProviderContainerを使用します。
+    // これにより、テスト間で状態が再利用されることはありません。
     final container = ProviderContainer();
     addTearDown(container.dispose);
     final listener = Listener();
@@ -150,7 +148,7 @@ void main() {
       didChange: (sub) => listener(sub.read().state),
     );
 
-    // The new test correcly uses the default value: 0
+    // 新しいテストでは、デフォルトの値である「0」が正しく使用されます。
     verify(listener(0)).called(1);
     verifyNoMoreInteractions(listener);
   });
@@ -160,52 +158,49 @@ void main() {
 </TabItem>
 </Tabs>
 
-As you can see, while `counterProvider` was declared as a global, no state was
-shared between tests.  
-As such, we do not have to worry about our tests potentially behaving differently
-if executed in a different order, since they are running in complete isolation.
+ご覧のとおり、`counterProvider`はグローバルとして宣言されていますが、テスト間で状態は共有されていません。  
+このように、テストは完全に分離して実行されるため、
+異なる順序で実行された場合にテストの動作が異なる可能性があることを心配する必要はありません。
 
-## Overriding the behavior of a provider during tests.
+## テスト時にProviderの動作をオーバーライドする。
 
-A common real-world application may have the following objects:
+一般的なアプリケーションでは、次のようなオブジェクトがあります。
 
-- It will have a `Repository` class, which provides a type-safe and simple API
-  to perform HTTP requests.
+- `Repository`クラスは、HTTPリクエストを実行するための型安全でシンプルなAPIを提供します。
 
-- An object that manages the application state, and may use `Repository` to perform
-  HTTP requests based on different factors.  
-  This may be a `ChangeNotifier`, `Bloc`, or even a provider.
+- アプリケーションの状態を管理するオブジェクトで、
+  `Repository`を使用してさまざまな要因に基づいてHTTPリクエストを実行することがあります。
+  これは、`ChangeNotifier`や`Bloc`、あるいはProviderかもしれません。
 
-Using [Riverpod], this may be represented as follows:
+[Riverpod]を使って、これを次のように表すことができます。
 
 ```dart
 class Repository {
   Future<List<Todo>> fetchTodos() async {}
 }
 
-// We expose our instance of Repository in a provider
+// RepositoryのインスタンスをProviderで公開します。
 final repositoryProvider = Provider((ref) => Repository());
 
-/// The list of todos. Here, we are simply fetching them from the server using
-/// [Repository] and doing nothing else.
+/// TODOのリストです。
+/// ここでは、[Repository]を使ってサーバーからTODOリストを取得しているだけで、他には何もしていません。
 final todoListProvider = FutureProvider((ref) async {
-  // Obtains the Repository instance
+  // Repositoryインスタンスの取得
   final repository = ref.read(repositoryProvider);
 
-  // Fetch the todos and expose them to the UI.
+  // TODOを取得し、UIに公開します。
   return repository.fetchTodos();
 });
 ```
 
-In this situation, when making a unit/widget test, we will typically want to
-replace our `Repository` instance with a fake implementation that returns
-a pre-defined response instead of making a real HTTP request.
+このような状況で、ユニットテストやウィジェットテストを行う際には、  
+通常、`Repository`のインスタンスを、実際のHTTPリクエストの代わりに、  
+あらかじめ定義されたレスポンスを返す偽の実装に置き換えたいと思うでしょう。
 
-We will then want our `todoListProvider` or equivalent to use the mocked implementation
-of `Repository`.
+次に、`todoListProvider`（またはそれに相当するもの）が`Repository`のモックされた実装を使用するようにします。
 
-To achieve this, we can use the `overrides` parameter of [ProviderScope]/[ProviderContainer]
-to override the behavior of `repositoryProvider`:
+これを実現するには、[ProviderScope]/[ProviderContainer]の`overrides`パラメータを使用して、  
+`repositoryProvider`の動作をオーバーライドします。
 
 <Tabs
   defaultValue="ProviderScope"
@@ -221,11 +216,11 @@ testWidgets('override repositoryProvider', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        // Override the behavior of repositoryProvider to return
-        // FakeRepository instead of Repository.
+        // Repositoryの代わりにFakeRepositoryを返すように、
+        // repositoryProviderの動作をオーバーライドします。
         repositoryProvider.overrideWithProvider(Provider((ref) => FakeRepository()))
-        // We do not have to override `todoListProvider`, it will automatically
-        // use the overriden repositoryProvider
+        // `todoListProvider`をオーバーライドする必要はありません。
+        // オーバーライドされたrepositoryProviderが自動的に使用されます。
       ],
       child: MyApp(),
     ),
@@ -240,24 +235,24 @@ testWidgets('override repositoryProvider', (tester) async {
 test('override repositoryProvider', () async {
   final container = ProviderContainer(
     overrides: [
-      // Override the behavior of repositoryProvider to return
-      // FakeRepository instead of Repository.
+        // Repositoryの代わりにFakeRepositoryを返すように、
+        // repositoryProviderの動作をオーバーライドします。
       repositoryProvider.overrideWithProvider(Provider((ref) => FakeRepository()))
-      // We do not have to override `todoListProvider`, it will automatically
-      // use the overriden repositoryProvider
+        // `todoListProvider`をオーバーライドする必要はありません。
+        // オーバーライドされたrepositoryProviderが自動的に使用されます。
     ],
   );
 
-  // The first read if the loading state
+  // ローディング中の場合の最初の読み込み
   expect(
     container.read(todoListProvider),
     const AsyncValue<List<Todo>>.loading(),
   );
 
-  /// Wait for the request to finish
+  /// リクエストが終了するのを待つ
   await Future<void>.value();
 
-  // Exposes the data fetched
+  // 取得したデータを公開する
   expect(container.read(todoListProvider).data.value, [
     isA<Todo>()
         .having((s) => s.id, 'id', '42')
@@ -270,19 +265,19 @@ test('override repositoryProvider', () async {
 </TabItem>
 </Tabs>
 
-As you can see by the highlighted code, [ProviderScope]/[ProviderContainer]
-allows replacing the implementation of a provider with a different behavior.
+ハイライトされたコードを見ればわかるように、[ProviderScope]/[ProviderContainer]は、  
+プロバイダの実装を別の動作に置き換えることができます。
 
 :::info
-Some providers expose simplified ways to override their behavior.  
-For example, [FutureProvider] allows overriding the provider with an `AsyncValue`:
+一部のプロバイダーは、その動作をオーバーライドするための簡易な方法を公開しています。   
+例えば、[FutureProvider]では、`AsyncValue`でプロバイダをオーバーライドすることができます。
 
 ````dart
 final todoListProvider = FutureProvider((ref) async => <Todo>[]);
 // ...
 ProviderScope(
   overrides: [
-    /// Allows overriding a FutureProvider to return a fixed value
+    /// FutureProviderをオーバーライドして固定値を返せるようにする
     todoListProvider.debugOverrideWithValue(
       AsyncValue.data([Todo(id: '42', label: 'Hello', completed: true)]),
     ),
@@ -293,9 +288,9 @@ ProviderScope(
 
 
 
-## Full widget test example
+## 完全なウィジェットのテスト例
 
-Wrapping up, here is the entire full code for our Flutter test.
+最後に、今回のFlutterテストの全コードを紹介します。
 
 ```dart
 import 'package:flutter/material.dart';
@@ -318,20 +313,20 @@ class Todo {
   final bool completed;
 }
 
-// We expose our instance of Repository in a provider
+// RepositoryのインスタンスをProviderで公開します。
 final repositoryProvider = Provider((ref) => Repository());
 
-/// The list of todos. Here, we are simply fetching them from the server using
-/// [Repository] and doing nothing else.
+/// TODOのリストです。
+/// ここでは、[Repository]を使ってサーバーからTODOリストを取得しているだけで、他には何もしていません。
 final todoListProvider = FutureProvider((ref) async {
-  // Obtains the Repository instance
+  // リポジトリインスタンスの取得
   final repository = ref.read(repositoryProvider);
 
-  // Fetch the todos and expose them to the UI.
+  // TODOを取得し、UIに公開します。
   return repository.fetchTodos();
 });
 
-/// A mocked implementation of Repository that returns a pre-defined list of todos
+/// 事前に定義されたTODOリストを返す、Repositoryのモックされた実装です。
 class FakeRepository implements Repository {
   @override
   Future<List<Todo>> fetchTodos() async {
@@ -357,13 +352,13 @@ void main() {
         overrides: [
           repositoryProvider.overrideWithProvider(Provider((ref) => FakeRepository()))
         ],
-        // Our application, which will read from todoListProvider to display the todo-list.
-        // You may extract this into a MyApp widget
+        // このアプリケーションは、TodoリストをtodoListProviderから読み込んで、表示します。
+        // これをMyAppウィジェットに抽出することができます。
         child: MaterialApp(
           home: Scaffold(
             body: Consumer(builder: (context, ref, _) {
               final todos = ref.watch(todoListProvider);
-              // The list of todos is loading or in error
+              // TODOリストが読み込まれているか、エラーになっている
               if (todos.data == null) {
                 return const CircularProgressIndicator();
               }
@@ -378,16 +373,16 @@ void main() {
       ),
     );
 
-    // The first frame is a loading state.
+    // 最初のフレームはロード状態です。
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-    // Re-render. TodoListProvider should have finished fetching the todos by now
+    // 再レンダリングします。TodoListProviderは、そろそろTodosの取得を終えているはずです。
     await tester.pump();
 
-    // No-longer loading
+    // 読み込みはすでに終了しています。
     expect(find.byType(CircularProgressIndicator), findsNothing);
 
-    // Rendered one TodoItem with the data returned by FakeRepository
+    // FakeRepositoryから返されたデータを使って、1つのTodoItemをレンダリングしました。
     expect(tester.widgetList(find.byType(TodoItem)), [
       isA<TodoItem>()
           .having((s) => s.todo.id, 'todo.id', '42')
