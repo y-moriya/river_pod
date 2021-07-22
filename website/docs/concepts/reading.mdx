@@ -5,38 +5,35 @@ title: Reading a provider
 import Tabs from "@theme/Tabs";
 import TabItem from "@theme/TabItem";
 
-Before reading this guide, make sure to [read about Providers](/docs/concepts/providers) first.
+このガイドを読む前に、まず[Providers](/docs/concepts/providers)をお読みください。
 
-In this guide, we will see how to consume a provider.
+このガイドでは、プロバイダを使う方法について説明します。
 
-There are multiple ways to read a provider, which change slightly based on different
-criterias.  
-Long story short, here is a decision graph to help you decide what to use to
-read a provider:
+プロバイダのreadする方法は複数あり、基準によって少しずつ異なります。  
+長くなりましたが、ここでは、プロバイダをreadするときに何を使うかを決めるための判断グラフを紹介します。
 
-![Decision graph for reading providers](/img/intro/reading.svg)
+![Reading Provider の判断グラフ](/img/intro/reading.svg)
 
-Next, we will see each individual case and show how they work.  
-For this guide, consider the following provider:
+次に、個々のケースを見て、その仕組みを紹介します。   
+このガイドでは、以下のプロバイダーを検討します。
 
 ```dart
 final counterProvider = StateProvider((ref) => 0);
 ```
 
-## Deciding what to read
+## 何をreadするかを決める
 
-Depending on the provider you want to listen, you may have multiple possible
-values that you can listen.
+listenしたいプロバイダによっては、listen可能な値が複数ある場合があります。
 
-An example, consider the following [StreamProvider]:
+例として、次のような[StreamProvider]を考えてみましょう。
 
 ```dart
 final userProvider = StreamProvider<User>(...);
 ```
 
-When reading this `userProvider`, you can:
+この`userProvider`をreadするときには
 
-- synchronously read the current state by listening to `userProvider` itself:
+- `userProvider`自身をlistenすることで、現在の状態を同期的にreadする: 
 
   ```dart
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,7 +47,7 @@ When reading this `userProvider`, you can:
   }
   ```
 
-- obtain the associated [Stream], by listening to `userProvider.stream`:
+- `userProvider.stream`をlistenして、関連する[Stream]を取得する: 
 
   ```dart
   Widget build(BuildContext context, WidgetRef ref) {
@@ -58,7 +55,7 @@ When reading this `userProvider`, you can:
   }
   ```
 
-- obtain a [Future] that resolves with the latest value emitted, by listening to `userProvider.last`:
+- `userProvider.last`をlistenして、emitされた最新の値で解決する[Future]を取得する: 
 
   ```dart
   Widget build(BuildContext context, WidgetRef ref) {
@@ -66,23 +63,21 @@ When reading this `userProvider`, you can:
   }
   ```
 
-For more information, refer to the documentation of each individual provider by
-consulting the [API reference](https://pub.dev/documentation/riverpod/latest/riverpod/riverpod-library.html).
+詳細は、[APIリファレンス](https://pub.dev/documentation/riverpod/latest/riverpod/riverpod-library.html)を参照して、各プロバイダのドキュメントを参照してください。
 
-## Consuming a provider inside widgets
+## Widgetの中でプロバイダを使う
 
-In this section, we will see how Flutter widgets can interact with providers.
+このセクションでは、FlutterのWidgetがどのようにプロバイダと連携するかを見ていきます。
 
 ### ConsumerWidget
 
-[ConsumerWidget] is a base-class for Widgets similar to `StatelessWidget`, but
-that allows you to listen to providers.
+[ConsumerWidget] は、`StatelessWidget` に似たウィジェットのベースクラスですが、プロバイダをlistenすることができます。
 
 ```dart {5}
 class Home extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Listens to the value exposed by counterProvider
+    // counterProviderによって公開された値をlistenします。
     int count = ref.watch(counterProvider).state;
 
     return Scaffold(
@@ -95,24 +90,23 @@ class Home extends ConsumerWidget {
 }
 ```
 
-Notice how the value of `counterProvider` is obtained by a function called `watch`.  
-This function is what makes [ConsumerWidget] listen to our provider and rebuild
-when the value exposed changed.
+`counterProvider`の値がどのように`watch`という関数で取得されているかに注目してください。  
+この関数は、[ConsumerWidget]がプロバイダをlistenし、値が変更されたときに再構築するためのものです。
 
 :::caution
-The `watch` method passed as an argument of [ConsumerWidget] should not be called
-asynchronously, like inside `onPressed` or a [ElevatedButton].
+[ConsumerWidget]の引数として渡される`watch`メソッドは、  
+`onPressed`や[ElevatedButton]の内部のように、非同期的に呼び出されるべきではありません。
 
-If you need to read a provider in response to a user event, see [context.read(myProvider)](#contextreadmyprovider)
+ユーザーイベントに応じてプロバイダをreadする必要がある場合は、[context.read(myProvider)](#contextreadmyprovider)を参照してください。
 :::
 
 ### Consumer
 
-[Consumer] is a [ConsumerWidget] that you can use to optimize the performances
-of your application by rebuilding only the widgets that needs use the data.
+[Consumer]は[ConsumerWidget]であり、データを使用する必要のあるWidgetのみを再構築することで、  
+アプリケーションのパフォーマンスを最適化するために使用することができます。
 
-For example, we could update the code snippet from [ConsumerWidget](#ConsumerWidget)
-we saw previously to rebuild **only** the `Text` when the counter changes:
+例えば、前に見た[ConsumerWidget](#ConsumerWidget)のコードスニペットを更新して、  
+カウンターが変更されたときに`Text`**だけ**を再構築するようにします。
 
 ```dart {11}
 class Home extends StatelessWidget {
@@ -122,9 +116,9 @@ class Home extends StatelessWidget {
       appBar: AppBar(title: const Text('Counter example')),
       body: Center(
         child: Consumer(
-          // Rebuild only the Text when counterProvider updates
+          // counterProviderの更新時にTextのみを再構築する
           builder: (context, ref, child) {
-            // Listens to the value exposed by counterProvider
+            // counterProviderによって公開された値をlistenする
             int count = ref.watch(counterProvider).state;
             return Text('$count');
           },
@@ -135,13 +129,11 @@ class Home extends StatelessWidget {
 }
 ```
 
-This example will make our UI listen to `counterProvider` and rebuild a [Text]
-(and only that [Text]) when the counter changes.
+この例では、UIが`counterProvider`をlistenし、カウンターが変更されると[Text]をリビルドします（その[Text]のみ）。
 
-### useProvider (hooks_riverpod only)
+### useProvider (hooks_riverpod のみ)
 
-If you are using [flutter_hooks]/[hooks_riverpod], an alternative to [ConsumerWidget]
-is to use [ref.watch(].
+[flutter_hooks]/[hooks_riverpod]を使用している場合、[ConsumerWidget]の代わりに[ref.watch()]を使用することができます。
 
 ```dart
 class Count extends HookConsumerWidget {
@@ -153,8 +145,8 @@ class Count extends HookConsumerWidget {
 }
 ```
 
-This can be useful when you want to use both [flutter_hooks] and [Riverpod] together.  
-This syntax also supports a feature that are not supported by [ConsumerWidget]: [select]
+これは[flutter_hooks]と[Riverpod]の両方を併用したい場合に便利です。   
+この構文は、[ConsumerWidget]ではサポートされていない機能もサポートしています。[select] です。
 
 ```dart
 class Example extends HookConsumerWidget {
@@ -166,18 +158,17 @@ class Example extends HookConsumerWidget {
 }
 ```
 
-Using this syntax, our widget will rebuild _only_ if the `isAbove5` variable changes.
-Which means that if the counter changes from `1` to `2`, this will _not_
-cause our widget to rebuild.
+この構文を使うと、`isAbove5`変数が変化した場合に _のみ_ 、Widgetが再構築されます。  
+つまり、カウンターが `1` から `2` に変更されても、 _Widgetが再構築されることはありません_ 。
 
 ### context.read(myProvider)
 
-With [Consumer] and [ref.watch], we've seen how to _listen_ to a provider.
+[Consumer]と[ref.watch]では、プロバイダを _listen_ する方法を見てきました。
 
-But in some situations, there's no value in listening to the object. For example,
-we may need the object only for the `onPressed` of a [ElevatedButton].
+しかし、状況によっては、そのオブジェクトをlistenする価値がないこともあります。  
+例えば、[ElevatedButton]の`onPressed`のためだけにオブジェクトが必要な場合があります。
 
-We _could_ use [ref.watch]/[Consumer]:
+私たちは、[ref.watch]/[Consumer]を使用することができます。
 
 ```dart {2,4}
 Consumer(builder: (context, ref, _) {
@@ -189,13 +180,13 @@ Consumer(builder: (context, ref, _) {
 });
 ```
 
-But that is not efficient. Depending on the provider listened, this
-could cause the [ElevatedButton] to rebuild when the counter changes,
-even when the counter isn't actually used to _build_ the [ElevatedButton].
+しかし、それでは効率が悪いでしょう。
+listenされたプロバイダによっては、カウンタが実際には[ElevatedButton]の構築に使用されていなくても、  
+カウンタが変更されたときに[ElevatedButton]が再構築されることがあります。
 
-That's where `context.read(myProvider)` is a solution.
+そこで、`context.read(myProvider)`が解決策となります。
 
-Using it, we could refactor our previous code to:
+これを使うことで、以前のコードをリファクタリングします。
 
 ```dart {4}
 @override
@@ -207,19 +198,17 @@ Widget build(BuildContext context) {
 }
 ```
 
-By doing so, clicking on our button still increments the counter. But we
-are no-longer listening to the provider, which avoids unnecessary rebuilds.
+こうすることで、ボタンをクリックしても、カウンターは増えていきます。  
+しかし、無駄なリビルドを避けるために、プロバイダをlistenしなくなっています。
 
-> I don't see the `context.read` method, why is that?
+> `context.read`メソッドが見当たらないのですが、これはなぜでしょうか？
 
-If you do not see `context.read`, it is likely that you did not import the correct
-package.
-To see this method, you must import either `package:flutter_riverpod` or `package:hooks_riverpod`.
+もし、`context.read`が表示されない場合は、正しいパッケージをインポートしていない可能性があります。
+このメソッドを表示するには、`package:flutter_riverpod`または`package:hooks_riverpod`のいずれかをインポートする必要があります。
 
 :::info
-Depending on the provider that you are listening to, you may not need to do this.  
-For example, [StateNotifierProvider] has a built-in way obtain a [StateNotifier]
-without listening to its state:
+listenするプロバイダによては、この作業が必要ない場合もあります。
+例えば、[StateNotifierProvider]は、[StateNotifier]の状態をlistenせずに取得する方法を内蔵しています。
 
 ```dart
 class Counter extends StateNotifier<int> {
@@ -234,8 +223,8 @@ final counterProvider = StateNotifierProvider((ref) => Counter());
 
 @override
 Widget build(BuildContext context, WidgetRef ref) {
-  // Obtains Counter without listening to Counter.state.
-  // Will not cause the button to rebuild when the counter changes.
+  // Counter.stateをlistenせずにCounterを取得します
+  // counterが変更されても、ボタンが再構築されることはありません。
   final Counter counter = ref.watch(counterProvider);
 
   return ElevatedButton(
@@ -248,16 +237,16 @@ Widget build(BuildContext context, WidgetRef ref) {
 :::
 
 :::caution
-Avoid calling `context.read` inside the `build` method of a Widget.  
-If you want to optimize rebuilds, extract the value listened in a [Provider] instead.
+Widget の `build` メソッド内での `context.read` の呼び出しを避けてください。  
+リビルドを最適化したい場合は、代わりに[Provider]でlistenされた値を抽出します。
 :::
 
 ### ProviderListener
 
-In some situations, you may want to your Widget tree to push a route or show
-a dialog after a change on a provider.
+プロバイダの変更後にルートをプッシュしたり、ダイアログを表示したりするために、  
+Widgetツリーが必要になる場合があります。
 
-Such behavior would be implemented using the [ProviderListener] Widget.
+このような動作は、[ProviderListener] Widgetを使用して実装されます。
 
 ```dart
 Widget build(BuildContext context) {
@@ -273,45 +262,42 @@ Widget build(BuildContext context) {
 }
 ```
 
-This will show a dialog when the counter reaches 5.
+これにより、カウンターが5に達したときにダイアログが表示されます。
 
-## Reading a provider inside another provider
+## プロバイダの中で別のプロバイダをreadする
 
-A common use-case when making providers is to want to create an object from other
-objects.  
-For example, we may want to create a `UserController` from a `UserRepository`,
-where both objects would be exposed in a different provider.
+プロバイダーを作る際によくあるのが、他のオブジェクトからオブジェクトを作りたいというケースです。 
 
-Such scenario is possible by using the `ref` object that providers receives as
-parameter:
+例えば、`UserRepository`から`UserController`を作成したい場合、  
+両方のオブジェクトは別のプロバイダで公開されます。
+
+このようなシナリオは、プロバイダがパラメータとして受け取る `ref` オブジェクトを使用することで可能になります。
 
 ```dart
 final userRepositoryProvider = Provider((ref) => UserRepository());
 
 final userControllerProvider = StateNotifierProvider((ref) {
   return UserController(
-    // Read userRepositoryProvider and create a UserController from the result
+    // userRepositoryProviderをreadし、その結果からUserControllerを作成します。
     repository: ref.watch(userRepositoryProvider),
   );
 });
 ```
 
-Make sure to check out the [Combining Providers](/docs/concepts/combining_providers) guide for
-more informations such as:
+[Combining Providers(プロバイダーの組み合わせ)](/docs/concepts/combining_providers)のガイドには、  
+以下のような情報が掲載されていますので、ぜひご覧ください。
 
-- What happens if I create an object from a value which can change over time?
-- Some good practices tips
+- 時間の経過とともに変化する値からオブジェクトを作成するとどうなるか？
+- いくつかのグッドプラクティス
 
-## Reading a provider outside of providers using Dart only
+## Dartのみの場合のプロバイダ外のプロバイダのread
 
-In some scenarios, you may want to read a provider in a package that has no
-dependency on Flutter.  
-A common use-case is to test a class unrelated to widgets.
+場合によっては、Flutterに依存していないパッケージのプロバイダをreadしたいこともあるでしょう。   
+よくあるケースは、Widgetとは関係のないクラスをテストする場合です。
 
-In this situation, you can use [ProviderContainer], which is a low-level
-utility to manipulate providers.
+このような状況では、プロバイダを操作するための低レベルのユーティリティである[ProviderContainer]を使用することができます。
 
-The following snippet demonstrates how a test can read providers without using Flutter:
+次のスニペットは、Flutterを使わずにテストでプロバイダをreadする方法を示しています。
 
 ```dart
 test('counter starts at 0', () {
@@ -323,8 +309,8 @@ test('counter starts at 0', () {
 ```
 
 :::danger
-Do not reuse the instance of [ProviderContainer] between tests.  
-This ensures that the state of your providers properly resets between test cases.
+[ProviderContainer]のインスタンスをテスト間で再利用しないでください。 
+これにより、テストケース間でプロバイダの状態が適切にリセットされるようになります。
 :::
 
 [provider]: https://pub.dev/documentation/riverpod/latest/riverpod/Provider-class.html
