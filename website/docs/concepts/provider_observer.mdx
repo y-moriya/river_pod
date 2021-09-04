@@ -2,27 +2,29 @@
 title: ProviderObserver
 ---
 
-[ProviderObserver] listens to the changes of a ProviderContainer.
+[ProviderObserver] は、ProviderContainer の変更を Listen します。
 
-To use it, extend the class ProviderObserver and override the method you like to use.
+これを使用するには、ProviderObserverクラスを拡張し、使用したいメソッドをオーバーライドします。
 
-[ProviderObserver] has four methods :
+[ProviderObserver] には4つのメソッドがあります。
 
-- `didAddProvider` is called every time a provider was initialized, and the value exposed is value.
-- `didDisposeProvider` is called every time A provider was disposed
-- `didUpdateProvider` is called every time my providers when they emit a notification.
-- `mayHaveChanged` is called when the dependency of a provider changed, but it is not yet sure if the computed value changes.
+- `didAddProvider` は、プロバイダが初期化されるたびに呼び出され、valueとして値が公開されます。
+- `didDisposeProvider` はプロバイダが廃棄されるたびに呼び出されます。
+- `didUpdateProvider` は、プロバイダが通知を発するたびに呼び出されます。
+- `mayHaveChanged` は、プロバイダの依存関係が変更されたが、計算された値が変更されたかどうかはまだわからない場合に呼び出されます。
 
 :::info
-It is possible that mayHaveChanged will be called, without didUpdateProvider being called, such as when a Provider is re-computed but returns a value == to the previous one.
+didUpdateProvider が呼ばれなくても、mayHaveChanged が呼ばれる可能性があります。例えば、Provider が再計算されたが、前の Provider と同じ値を返す場合などです。
 :::
 
 ### Usage :
 
-A simple use case for [ProviderObserver], is to log the changes in providers by overriding the method `didUpdateProvider`.
+使い方
+
+[ProviderObserver] の簡単な使用例は、`didUpdateProvider`メソッドをオーバーライドすることで、プロバイダの変更をログ出力することです。
 
 ```dart
-// A Counter example implemented with riverpod with Logger
+// riverpodで実装したLoggerを使ったカウンターの例
 
 class Logger extends ProviderObserver {
   @override
@@ -37,8 +39,8 @@ class Logger extends ProviderObserver {
 
 void main() {
   runApp(
-    // Adding ProviderScope enables Riverpod for the entire project
-    // Adding our Logger to the list of observers
+    // ProviderScopeを追加すると、プロジェクト全体でRiverpodが有効になる
+    // オブザーバーのリストにLoggerを追加する
     ProviderScope(observers: [Logger()], child: MyApp()),
   );
 }
@@ -74,7 +76,7 @@ class Home extends StatelessWidget {
 }
 ```
 
-Now that every time the value of our provider is updated, the logger will log it :
+これで、プロバイダの値が更新されるたびに、ログ出力されるようになりました。
 
 ```
 I/flutter (16783): {
